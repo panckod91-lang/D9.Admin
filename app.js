@@ -7,8 +7,8 @@ const state = {
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
-const money = (v) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(parsePrice(v) || 0);
-const numberAR = (v) => new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(parsePrice(v) || 0);
+const money = (v) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(v) || 0);
+const precioAR = (v) => new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(v) || 0);
 
 function toast(msg, type = "ok") {
   const el = $("#toast");
@@ -181,40 +181,42 @@ async function saveImportedProducts() {
 
 async function loadOrders() {
   const url = `${API_BASE}?action=list_pedidos`;
+  $("#ordersSummary").textContent = "Cargando pedidos…";
   try {
     const data = await (await fetch(url, { cache: "no-store" })).json();
     if (!data.ok) throw new Error(data.error || "No se pudo cargar pedidos");
-    state.pedidos = (data.pedidos || []).map(normalizePedido);
+    state.pedidos = (data.pedidos || []).map(normalizeOrderRow);
     renderOrders();
     toast(`Pedidos cargados: ${state.pedidos.length}`);
   } catch (err) {
     console.error(err);
-    toast("No se pudo cargar list_pedidos", "error");
+    $("#ordersSummary").textContent = "No se pudieron cargar pedidos.";
+    toast("No se pudo leer action=list_pedidos", "error");
   }
 }
 
-function normalizePedido(o) {
+function normalizeOrderRow(o) {
   return {
     fecha: o.fecha || "",
     pedido_id: o.pedido_id || o.id_comp || o.id || "",
     vendedor_id: o.vendedor_id || "",
     vendedor: o.vendedor || "",
     cliente: o.cliente || "",
-    item: o.item || o.detalle || "",
-    cantidad: o.cantidad ?? o.total ?? "",
-    precio: o.precio ?? "",
-    total_item: o.total_item ?? "",
-    total_pedido: o.total_pedido ?? ""
+    item: o.item || o.detalle || o.producto || "",
+    cantidad: o.cantidad || o.total || "",
+    precio: Number(o.precio || 0),
+    total_item: Number(o.total_item || 0),
+    total_pedido: Number(o.total_pedido || 0),
+    fecha_iso: dateToISO(o.fecha || "")
   };
 }
 
-function pedidoDateKey(value) {
+function dateToISO(value) {
   const s = String(value || "").trim();
   if (!s) return "";
-  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
-  const ar = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if (ar) return `${ar[3]}-${ar[2].padStart(2, "0")}-${ar[1].padStart(2, "0")}`;
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return `${m[3]}-${String(m[2]).padStart(2, "0")}-${String(m[1]).padStart(2, "0")}`;
   return "";
 }
 
@@ -225,13 +227,13 @@ function renderOrders() {
   let rows = state.pedidos.filter(o => {
     const txt = Object.values(o).join(" ").toLowerCase();
     if (q && !txt.includes(q)) return false;
-    const iso = pedidoDateKey(o.fecha);
-    if (from && (!iso || iso < from)) return false;
-    if (to && (!iso || iso > to)) return false;
+    const iso = o.fecha_iso || "";
+    if (from && iso && iso < from) return false;
+    if (to && iso && iso > to) return false;
     return true;
   });
   const total = rows.reduce((s, r) => s + Number(r.total_item || 0), 0);
-  $("#ordersSummary").textContent = `${rows.length} líneas · total filtrado: ${money(total)}`;
+  $("#ordersSummary").textContent = `${rows.length} líneas de ${state.pedidos.length} · total filtrado: ${money(total)}`;
   $("#ordersTable").innerHTML = tableHtml(rows.slice(0, 500), ["fecha", "pedido_id", "vendedor", "cliente", "item", "cantidad", "precio", "total_item", "total_pedido"], "Pedidos");
 }
 
@@ -250,10 +252,9 @@ function tableHtml(rows, headers, caption = "") {
 
 function formatCell(v, key = "") {
   if (v === null || v === undefined) return "";
+  if (["lista_1", "lista_2", "lista_3"].includes(key)) return v === "" ? "" : precioAR(v);
+  if (["precio", "total_item", "total_pedido"].includes(key)) return money(v);
   if (typeof v === "object") return JSON.stringify(v);
-  const k = String(key).toLowerCase();
-  if (["lista_1", "lista_2", "lista_3"].includes(k)) return v === "" ? "" : numberAR(v);
-  if (["precio", "total_item", "total_pedido"].includes(k)) return v === "" ? "" : money(v);
   return String(v);
 }
 

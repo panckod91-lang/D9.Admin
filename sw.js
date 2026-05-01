@@ -1,4 +1,4 @@
-const CACHE_NAME = "d9-admin-dev-v4";
+const CACHE_NAME = "d9-admin-dev-v3";
 const APP_SHELL = [
   "/",
   "/index.html",
