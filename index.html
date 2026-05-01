@@ -4,392 +4,107 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#61bde8" />
-  <title>D9 Pedidos</title>
-  <!-- Open Graph (WhatsApp, Facebook) -->
-<meta property="og:title" content="Distribuidora 9 - Pedidos" />
-<meta property="og:description" content="Tomá pedidos, consultá precios y enviá rápido desde tu celular." />
-<meta property="og:image" content="https://pd9-cloud.pages.dev/og-d9.jpg" />
-<meta property="og:url" content="https://pd9-cloud.pages.dev/" />
-<meta property="og:type" content="website" />
-
-<!-- Extra compatibilidad -->
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="Distribuidora 9 - Pedidos" />
-<meta name="twitter:description" content="Tomá pedidos rápido y fácil." />
-<meta name="twitter:image" content="https://pd9-cloud.pages.dev/og-d9.png" />
+  <title>D9 Admin</title>
+  <meta property="og:title" content="D9 Admin" />
+  <meta property="og:description" content="Panel de administración para Distribuidora 9." />
+  <meta property="og:image" content="https://pd9-cloud.pages.dev/og-d9.jpg" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-  <div class="app-shell app-shell-vnext">
-    <header class="hero-header-vnext">
+  <div class="app-shell app-shell-vnext admin-shell">
+    <header class="hero-header-vnext admin-hero">
       <div class="brand-left-vnext">
         <button id="btnCompanyInfo" class="logo-badge-vnext logo-btn-d9 logo-btn" type="button" aria-label="Ver información de la empresa">
-  <img src="icons/logo_d9.png" onerror="this.onerror=null;this.src='icons/icon.svg';" alt="Logo D9" />
-</button>
+          <img src="icons/logo_d9.png" onerror="this.onerror=null;this.src='icons/icon.svg';" alt="Logo D9" />
+        </button>
         <div class="brand-copy-vnext">
-          <h1 id="appTitle">Distribuidora 9</h1>
-          <p id="empresaLabel">Gestor de pedidos</p>
+          <h1 id="appTitle">D9 Admin</h1>
+          <p id="empresaLabel">Panel de administración</p>
         </div>
       </div>
     </header>
 
-    <section class="status-row-vnext">
+    <section class="status-row-vnext admin-status-row">
       <div class="status-slot-vnext status-slot-left-vnext">
         <div id="networkStatus" class="status-pill-vnext status-pill-small-vnext muted">Verificando…</div>
       </div>
       <div class="status-slot-vnext status-slot-center-vnext">
-        <div id="sellerBadge" class="status-pill-vnext status-pill-user-vnext muted">
-          <span class="seller-name">Sin usuario</span>
+        <div id="adminBadge" class="status-pill-vnext status-pill-user-vnext">
+          <span class="seller-name">Admin DEV</span>
         </div>
       </div>
       <div class="status-slot-vnext status-slot-right-vnext">
-        <button id="btnPancko" class="status-pill-vnext status-pill-small-vnext pancko-pill-vnext" type="button">M.J.S.</button>
+        <button id="btnReload" class="status-pill-vnext status-pill-small-vnext pancko-pill-vnext" type="button">↻ Sync</button>
       </div>
-      <div id="pendingBadge" class="status-pill-vnext alert hidden">0 pendientes</div>
     </section>
 
     <main>
-      <section id="view-home" class="view active view-home-vnext">
-        <button id="btnGoOrder" class="cta-main-vnext" data-title="Generar pedido" data-sub="Cliente, productos y envío" type="button">
-          <span class="cta-icon-vnext">🛒</span>
-          <span class="cta-copy-vnext">
-            <strong>GENERAR PEDIDO</strong>
-            <small>Cliente, productos y envío</small>
-          </span>
-          <span class="cta-arrow-vnext">›</span>
-        </button>
-
-        <section id="bannerWrap" class="promo-card-vnext banner-wrap hidden"></section>
-
-        <section class="home-grid-vnext">
-          <button id="btnGoPrices" class="action-card-vnext" type="button">
-            <span class="action-head-vnext">
-              <span class="icon-wrap-vnext blue">🏷</span>
-              <span class="title-group-vnext">
-                <strong>Lista de precios</strong>
-                <small>Consultar categorías y precios</small>
-              </span>
-            </span>
-            <span class="go-vnext">›</span>
-          </button>
-
-          <button id="btnGoHistory" class="action-card-vnext" type="button">
-            <span class="action-head-vnext">
-              <span class="icon-wrap-vnext cyan">🕘</span>
-              <span class="title-group-vnext">
-                <strong>Historial</strong>
-                <small>Pedidos guardados en este celular</small>
-              </span>
-            </span>
-            <span class="go-vnext">›</span>
-          </button>
-
-          <button id="btnChangeSeller" class="action-card-vnext" data-title="Ingresar" data-sub="Acceder con usuario y clave" type="button">
-            <span class="action-head-vnext">
-              <span class="icon-wrap-vnext soft">👤</span>
-              <span class="title-group-vnext">
-                <strong>Usuario</strong>
-                <small>Sesión actual y acceso</small>
-              </span>
-            </span>
-            <span class="go-vnext">›</span>
-          </button>
-
-          <div id="btnSyncPending" class="action-card-vnext pending-card-vnext pending-info-card-vnext" data-title="Pendientes" data-sub="Registros pendientes de envío">
-            <span class="action-head-vnext">
-              <span class="icon-wrap-vnext warm">📋</span>
-              <span class="title-group-vnext">
-                <strong id="pendingInfoTitle">Sin pendientes</strong>
-                <small id="pendingInfoText">Pedidos sincronizados</small>
-              </span>
-            </span>
-            <span class="pending-count-vnext hidden">0</span>
-          </div>
+      <section id="view-home" class="view active view-home-vnext admin-view">
+        <section class="admin-intro-card">
+          <strong>Panel D9 Admin</strong>
+          <span>Entorno de desarrollo conectado a la Sheet copia.</span>
         </section>
 
-        <section class="led-info-vnext">
-          <div class="led-row-vnext">
-            <div class="led-live-vnext"><span class="live-dot-vnext"></span>EN VIVO</div>
-            <div class="led-divider-vnext"></div>
-            <div class="led-marquee-wrap-vnext">
-              <div id="ledTicker" class="led-marquee-vnext">
-                <span>🚚 Repartos hasta las 18hs</span>
-                <span>•</span>
-                <span>🏷 Promos activas</span>
-                <span>•</span>
-                <span>📍 Zona sur sin envío hoy</span>
-                <span>•</span>
-                <span>📦 Combos destacados</span>
-              </div>
-            </div>
-            <div class="led-divider-vnext"></div>
-            <div class="led-end-vnext">🏷</div>
-          </div>
+        <section class="home-grid-vnext admin-grid">
+          <button class="action-card-vnext" data-view="config" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext blue">⚙️</span><span class="title-group-vnext"><strong>Confi</strong><small>Títulos, ticker e institucional</small></span></span><span class="go-vnext">›</span></button>
+          <button class="action-card-vnext" data-view="productos" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext cyan">📦</span><span class="title-group-vnext"><strong>Productos</strong><small>Importar XLS y preparar lista</small></span></span><span class="go-vnext">›</span></button>
+          <button class="action-card-vnext" data-view="pedidos" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext warm">🧾</span><span class="title-group-vnext"><strong>Pedidos</strong><small>Visualizar y filtrar</small></span></span><span class="go-vnext">›</span></button>
+          <button class="action-card-vnext" data-view="clientes" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext soft">🏪</span><span class="title-group-vnext"><strong>Clientes</strong><small>Vista rápida</small></span></span><span class="go-vnext">›</span></button>
+          <button class="action-card-vnext" data-view="usuarios" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext soft">👤</span><span class="title-group-vnext"><strong>Usuarios</strong><small>Vendedores y colores</small></span></span><span class="go-vnext">›</span></button>
+          <button class="action-card-vnext" data-view="publicidad" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext blue">🖼️</span><span class="title-group-vnext"><strong>Publicidad</strong><small>Banners y carrusel</small></span></span><span class="go-vnext">›</span></button>
         </section>
       </section>
 
-      <section id="view-order" class="view">
-        <div class="view-head history-head-d9">
-  <button class="back-btn history-home-d9 home-red-d9" data-back="home">🏠</button>
-
-  <div class="history-title-d9">
-    <h2>Generar pedido</h2>
-    <p class="subhead">Más rápido, más facil!.</p>
-  </div>
-</div>
-
-        <div class="card quick-grid-card">
-          <button id="btnOpenClients" class="picker-btn" type="button">
-            <span class="picker-label">Cliente</span>
-            <strong id="selectedClientLabel">Seleccionar cliente</strong>
-          </button>
-
-          <button id="btnOpenCategories" class="picker-btn" type="button">
-            <span class="picker-label">Categoría</span>
-            <strong id="selectedCategoryLabel">Todas las categorías</strong>
-          </button>
-
-          <button id="btnOpenProducts" class="picker-btn" type="button">
-            <span class="picker-label">Productos</span>
-            <strong id="selectedProductsLabel">Seleccionar productos</strong>
-          </button>
-        </div>
-
-        <div id="selectedClientCard" class="selected-card hidden"></div>
-
-        <div id="orderPriceListBox" class="card price-mode-box hidden">
-          <label class="picker-label" for="orderPriceListSelect">Lista para este pedido</label>
-          <select id="orderPriceListSelect" class="select">
-            <option value="lista_1">Lista_1 · Contado</option>
-            <option value="lista_2">Lista_2 · Pueblos</option>
-            <option value="lista_3">Lista_3 · Vendedores</option>
-          </select>
-          <div id="orderPriceListInfo" class="mini-text price-info"></div>
-        </div>
-
-        <div class="card section-block">
-          <div class="section-title-row between hidden-preview-section">
-            <h3>Pedido actual</h3>
-            <button id="btnClearCart" class="link-btn danger" type="button">Limpiar</button>
-          </div>
-
-          <div id="cartList" class="cart-list empty-state hidden-preview-section">Todavía no agregaste productos.</div>
-
-          <div class="summary-box compact-summary hidden-preview-section">
-            <div class="summary-row"><span>Items</span><strong id="summaryItems">0</strong></div>
-            <div class="summary-row total"><span>Total</span><strong id="summaryTotal">$ 0</strong></div>
-          </div>
-
-          <div class="actions-stack">
-            <button id="btnSavePending" class="secondary-btn" data-title="Guardar pendiente" type="button">Guardar pendiente</button>
-            <button id="btnSend" class="primary-btn" data-title="Enviar pedido" type="button">Enviar pedido</button>
-          </div>
-        </div>
+      <section id="view-config" class="view admin-view">
+        <div class="admin-page-head"><button class="admin-home-btn" data-view="home" type="button">🏠</button><div><h2>Confi</h2><p>Editar textos principales, ticker e institucional.</p></div></div>
+        <form id="configForm" class="admin-form"></form>
       </section>
 
-
-      <section id="view-prices" class="view">
-        <div class="view-head history-head-d9">
-  <button class="back-btn history-home-d9 home-red-d9" data-back="home">🏠</button>
-
-  <div class="history-title-d9">
-    <h2>Lista de precios</h2>
-    <p class="subhead">Consultar productos.</p>
-  </div>
-</div>
-
-        <div class="card section-block">
-          <div id="priceListModeBox" class="price-mode-box hidden">
-            <label class="picker-label" for="priceListSelect">Lista activa</label>
-            <select id="priceListSelect" class="select">
-              <option value="lista_1">Lista_1 · Contado</option>
-              <option value="lista_2">Lista_2 · Pueblos</option>
-              <option value="lista_3">Lista_3 · Vendedores</option>
-            </select>
-          </div>
-
-          <div class="price-sticky-d9">
-            <input id="priceSearch" class="input" type="search" placeholder="Buscar producto..." autocomplete="off" />
-            <div id="priceCategoryWrap" class="chips-row"></div>
-            <div id="priceListInfo" class="mini-text price-info"></div>
-          </div>
-          <div id="priceProductsList" class="price-products-list"></div>
+      <section id="view-productos" class="view admin-view">
+        <div class="admin-page-head"><button class="admin-home-btn" data-view="home" type="button">🏠</button><div><h2>Productos</h2><p>Importar XLS 97, normalizar columnas y previsualizar antes de guardar.</p></div></div>
+        <div class="admin-card">
+          <label class="admin-label">Archivo .xls / .xlsx</label>
+          <input id="xlsInput" class="admin-input" type="file" accept=".xls,.xlsx" />
+          <div class="admin-actions"><button id="btnParseXls" class="admin-btn primary" type="button">Previsualizar lista</button><button id="btnSaveProducts" class="admin-btn danger" type="button" disabled>Guardar en productos</button></div>
+          <label class="admin-check"><input id="confirmReplaceProducts" type="checkbox" /> Reemplazar toda la hoja productos de la Sheet DEV.</label>
+          <p id="xlsSummary" class="admin-note">Esperando archivo…</p>
         </div>
+        <div id="productsPreview" class="admin-table-wrap"></div>
       </section>
 
-      <section id="view-history" class="view">
-        <div class="view-head history-head-d9">
-          <button class="back-btn history-home-d9 home-red-d9" data-back="home" type="button" aria-label="Volver al inicio">🏠</button>
-          <div class="history-title-d9">
-            <h2>Historial</h2>
-            <p class="subhead">Movimientos guardados.</p>
-          </div>
-          <div class="history-actions-d9">
-            <button id="btnExportHistory" class="link-btn" type="button">Exportar</button>
-            <button id="btnRestoreHistory" class="link-btn" type="button">Restaurar</button>
-            <input id="restoreHistoryFile" class="hidden" type="file" accept="application/json,.json" />
-          </div>
+      <section id="view-pedidos" class="view admin-view">
+        <div class="admin-page-head"><button class="admin-home-btn" data-view="home" type="button">🏠</button><div><h2>Pedidos</h2><p>Consulta de hoja pedidos con filtros básicos.</p></div></div>
+        <div class="admin-card admin-filter-grid">
+          <input id="orderFilterText" class="admin-input" placeholder="Buscar cliente, vendedor o producto" />
+          <input id="orderFilterFrom" class="admin-input" type="date" />
+          <input id="orderFilterTo" class="admin-input" type="date" />
+          <button id="btnLoadOrders" class="admin-btn primary" type="button">Cargar pedidos</button>
         </div>
-
-        <div class="card">
-          <div id="historyList" class="history-list empty-state">Sin movimientos todavía.</div>
-        </div>
+        <p id="ordersSummary" class="admin-note"></p>
+        <div id="ordersTable" class="admin-table-wrap"></div>
       </section>
 
-      <section id="view-support" class="view">
-        <div class="view-head">
-          <button class="back-btn home-red-d9" data-back="home" type="button" aria-label="Volver al inicio">🏠</button>
-          <div>
-            <h2>Soporte</h2>
-            <p class="subhead">Contacto y datos del desarrollador.</p>
-          </div>
-        </div>
-
-        <div class="card">
-          <div id="supportBox" class="support-box">Cargando…</div>
-        </div>
-      </section>
+      <section id="view-clientes" class="view admin-view admin-simple-table-view"></section>
+      <section id="view-usuarios" class="view admin-view admin-simple-table-view"></section>
+      <section id="view-publicidad" class="view admin-view admin-simple-table-view"></section>
     </main>
   </div>
 
-  
-
-  <div id="companyModal" class="modal hidden" aria-hidden="true">
-    <div class="modal-backdrop" data-close-modal="company"></div>
-    <div class="modal-panel company-panel-d9">
-      <div class="company-head-d9">
-        <img src="icons/logo_d9.png" onerror="this.onerror=null;this.src='icons/icon.svg';" alt="Logo D9" />
-        <div>
-          <div class="company-kicker-d9">Institucional</div>
-          <h3>Distribuidora 9</h3>
-          <p>Gestor de pedidos y consultas.</p>
-        </div>
-        <button class="ghost-x company-close-d9" data-close-modal="company" type="button" aria-label="Cerrar">✕</button>
-      </div>
-
-      <div id="companyContent" class="company-body-d9">
-        <div class="company-card-d9">
-          <strong>Sobre la empresa</strong>
-          <p>Cargando información institucional…</p>
-        </div>
-      </div>
+  <div id="companyModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card company-modal-card-vnext">
+      <button id="closeCompanyModal" class="close-btn" type="button">×</button>
+      <div class="company-modal-head-vnext"><img src="icons/logo_d9.png" alt="D9" /><div><strong id="modalCompanyTitle">Distribuidora 9</strong><span id="modalCompanySubtitle">Panel Admin</span></div></div>
+      <div id="companyModalBody" class="company-modal-body-vnext"></div>
     </div>
   </div>
 
-  <div id="loginModal" class="modal hidden" aria-hidden="true">
-    <div class="modal-backdrop"></div>
-    <div class="modal-panel">
-      <h3>Ingreso de usuario</h3>
-      <p class="modal-text">Entrá con tu usuario y clave o seguí en modo invitado.</p>
-      <input id="sellerUser" class="input login-select" type="text" placeholder="Usuario" autocomplete="username" />
-      <input id="sellerPass" class="input" type="password" placeholder="Clave" autocomplete="current-password" />
-      <button id="btnLogin" class="primary-btn full-btn" type="button">Ingresar</button>
-      <button id="btnLogout" class="secondary-btn full-btn hidden" type="button">Cerrar sesión</button>
-      <button id="btnCloseLogin" class="secondary-btn full-btn hidden" type="button">Cerrar</button>
-    </div>
-  </div>
-
-  <div id="clientModal" class="modal hidden" aria-hidden="true">
-    <div class="modal-backdrop" data-close-modal="client"></div>
-    <div class="modal-panel tall-panel">
-      <div class="modal-head-row">
-        <h3>Seleccionar cliente</h3>
-        <button class="ghost-x" data-close-modal="client" type="button">✕</button>
-      </div>
-      <input id="clientSearch" class="input" type="search" placeholder="Buscar cliente..." autocomplete="off" />
-      <div id="clientList" class="option-list modal-list"></div>
-    </div>
-  </div>
-
-
-  <div id="occasionalClientModal" class="modal hidden" aria-hidden="true">
-    <div class="modal-backdrop" data-close-modal="occasionalClient"></div>
-    <div class="modal-panel tall-panel">
-      <div class="modal-head-row">
-        <h3>Cliente nuevo / ocasional</h3>
-        <button class="ghost-x" data-close-modal="occasionalClient" type="button">✕</button>
-      </div>
-      <input id="occasionalName" class="input" type="text" placeholder="Nombre" autocomplete="off" />
-      <input id="occasionalPhone" class="input" type="tel" placeholder="Teléfono" autocomplete="off" />
-      <input id="occasionalAddress" class="input" type="text" placeholder="Dirección" autocomplete="off" />
-      <input id="occasionalCity" class="input" type="text" placeholder="Ciudad" autocomplete="off" />
-      <div id="occasionalPriceWrap">
-        <label class="picker-label" for="occasionalPriceList">Lista de precios</label>
-        <select id="occasionalPriceList" class="select">
-          <option value="lista_1">Lista_1 · Contado</option>
-          <option value="lista_2">Lista_2 · Pueblos</option>
-          <option value="lista_3">Lista_3 · Vendedores</option>
-        </select>
-      </div>
-      <div class="modal-actions sticky-modal-actions">
-        <button id="btnSaveOccasionalClient" class="primary-btn full-btn" type="button">Usar este cliente</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="categoryModal" class="modal hidden" aria-hidden="true">
-    <div class="modal-backdrop" data-close-modal="category"></div>
-    <div class="modal-panel tall-panel">
-      <div class="modal-head-row">
-        <h3>Seleccionar categoría</h3>
-        <button class="ghost-x" data-close-modal="category" type="button">✕</button>
-      </div>
-      <div id="categoryList" class="option-list modal-list"></div>
-    </div>
-  </div>
-
-  <div id="productModal" class="modal hidden" aria-hidden="true">
-    <div class="modal-backdrop" data-close-modal="product"></div>
-    <div class="modal-panel tall-panel product-modal-panel-d9">
-      <div class="modal-head-row">
-        <div>
-          <h3>Seleccionar productos</h3>
-          <p id="productModalHint" class="modal-text small-gap">Podés marcar varios.</p>
-        </div>
-        <button class="ghost-x" data-close-modal="product" type="button">✕</button>
-      </div>
-      <input id="productSearch" class="input" type="search" placeholder="Buscar producto..." autocomplete="off" />
-      <div id="productList" class="product-list modal-list"></div>
-      <button id="btnProductDone" class="primary-btn full-btn sticky-action" data-close-modal="product" type="button">Aceptar selección</button>
-    </div>
-  </div>
-
+  <div id="toast" class="toast hidden"></div>
   <script src="app.js"></script>
-
-  <div id="priceCategoryModal" class="modal hidden" aria-hidden="true">
-    <div class="modal-backdrop" data-close-modal="priceCategory"></div>
-    <div class="modal-panel tall-panel">
-      <div class="modal-head-row">
-        <h3>Categorías</h3>
-        <button class="ghost-x" data-close-modal="priceCategory" type="button">✕</button>
-      </div>
-      <div id="priceCategoryList" class="option-list modal-list"></div>
-    </div>
-  </div>
-
-
-  <div id="orderConfirmModal" class="modal hidden" aria-hidden="true">
-    <div class="modal-backdrop" data-close-modal="orderConfirm"></div>
-    <div class="modal-panel order-confirm-panel-d9">
-      <div class="modal-head-row">
-        <div>
-          <h3>Confirmar pedido</h3>
-          <p class="modal-text small-gap">Verificá cliente, productos y total antes de enviar.</p>
-        </div>
-        <button class="ghost-x" data-close-modal="orderConfirm" type="button">✕</button>
-      </div>
-
-      <div id="orderConfirmContent" class="order-confirm-content-d9"></div>
-
-      <div class="confirm-actions-d9">
-        <button id="btnCancelOrderConfirm" class="secondary-btn" type="button">Editar</button>
-        <button id="btnConfirmOrderSend" class="primary-btn" type="button">Confirmar y enviar</button>
-      </div>
-    </div>
-  </div>
-
 </body>
 </html>
