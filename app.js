@@ -230,15 +230,17 @@ async function loadOrders() {
 function normalizeOrderRow(o) {
   return {
     fecha: o.fecha || "",
-    pedido_id: o.pedido_id || o.id_comp || o.id || "",
+    // ✅ FIX: "ID comp." → normalizarHeader_ lo convierte en "id_comp." (con punto).
+    // Por eso se busca con o["id_comp."] además de las variantes sin punto.
+    pedido_id: o.pedido_id || o["id_comp."] || o.id_comp || o.id_pedido || o.id || "",
     vendedor_id: o.vendedor_id || "",
     vendedor: o.vendedor || "",
     cliente: o.cliente || "",
-    item: o.item || o.detalle || o.producto || "",
+    item: o.item || o.detalle || o.producto || o.nombre || "",
     cantidad: Number(o.cantidad ?? o.total ?? 0) || 0,
     precio: Number(o.precio || 0) || 0,
-    total_item: Number(o.total_item || 0) || 0,
-    total_pedido: Number(o.total_pedido || 0) || 0,
+    total_item: Number(o.total_item || o.totalitem || 0) || 0,
+    total_pedido: Number(o.total_pedido || o.totalpedido || 0) || 0,
     _raw: o
   };
 }
@@ -326,9 +328,14 @@ function formatCell(v, key = "") {
 
 async function apiPost(payload) {
   const body = JSON.stringify(payload);
+  // ✅ FIX: incluir action en la URL para que sobreviva el 302 redirect de GAS.
+  // Cuando el browser sigue el redirect, pierde el body del POST.
+  // Con action en el query string, doPost puede leerlo desde e.parameter.action.
+  const actionParam = encodeURIComponent(String(payload.action || ""));
+  const postUrl = `${API_BASE}?action=${actionParam}`;
 
   async function tryPost(options) {
-    const r = await fetch(API_BASE, {
+    const r = await fetch(postUrl, {
       method: "POST",
       cache: "no-store",
       redirect: "follow",
