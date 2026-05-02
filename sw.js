@@ -1,4 +1,4 @@
-const CACHE_NAME = "d9-admin-dev-v070";
+const CACHE_NAME = "d9-admin-dev-v090-urlfix";
 
 self.addEventListener("install", event => {
   self.skipWaiting();

@@ -1,6 +1,6 @@
-const API_BASE = "https://script.google.com/macros/s/AKfycbxE5JByaA5iSrvIhD7S4WTgYBWL4ZPZYkf3Gi6lKQ8Xo8oov20HLhaeyeUMKjeglsHTPA/exec";
+const API_BASE = "https://script.google.com/macros/s/AKfycbyhcs6trzNcrN1M2Uf-8Wl0LYZ1D61o-iKEzeBInWirrAS8NJ0fUX3GCxJ0990E0hNkFQ/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v0.7.0";
+const APP_VERSION = "v0.9.0-urlfix";
 
 const state = {
   config: {}, soporte: {}, clientes: [], productos: [], usuarios: [], publicidad: [], pedidos: [], importedProducts: []
