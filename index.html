@@ -1,14 +1,113 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>D9 Admin</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#61bde8" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="D9 Admin" />
+  <title>D9 Admin</title>
+  <meta property="og:title" content="D9 Admin" />
+  <meta property="og:description" content="Panel de administración para Distribuidora 9." />
+  <meta property="og:image" content="https://pd9-cloud.pages.dev/og-d9.jpg" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-<h1>D9 Admin</h1>
-<button onclick="cargarPedidos()">Cargar pedidos</button>
-<pre id="out"></pre>
-<script src="app.js"></script>
+  <div class="app-shell app-shell-vnext admin-shell">
+    <header class="hero-header-vnext admin-hero">
+      <div class="brand-left-vnext">
+        <button id="btnCompanyInfo" class="logo-badge-vnext logo-btn-d9 logo-btn" type="button" aria-label="Ver información de la empresa">
+          <img src="icons/logo_d9.png" onerror="this.onerror=null;this.src='icons/icon.svg';" alt="Logo D9" />
+        </button>
+        <div class="brand-copy-vnext">
+          <h1 id="appTitle">D9 Admin</h1>
+          <p id="empresaLabel">Panel de administración</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="status-row-vnext admin-status-row">
+      <div class="status-slot-vnext status-slot-left-vnext">
+        <div id="networkStatus" class="status-pill-vnext status-pill-small-vnext muted">Verificando…</div>
+      </div>
+      <div class="status-slot-vnext status-slot-center-vnext">
+        <div id="adminBadge" class="status-pill-vnext status-pill-user-vnext">
+          <span class="seller-name">Admin DEV</span>
+        </div>
+      </div>
+      <div class="status-slot-vnext status-slot-right-vnext">
+        <button id="btnReload" class="status-pill-vnext status-pill-small-vnext pancko-pill-vnext" type="button">↻ Sync</button>
+      </div>
+    </section>
+
+    <main>
+      <section id="view-home" class="view active view-home-vnext admin-view">
+        <section class="admin-intro-card">
+          <strong>Panel D9 Admin</strong>
+          <span>Entorno de desarrollo conectado a la Sheet copia.</span>
+        </section>
+
+        <section class="home-grid-vnext admin-grid">
+          <button class="action-card-vnext" data-view="config" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext blue">⚙️</span><span class="title-group-vnext"><strong>Confi</strong><small>Títulos, ticker e institucional</small></span></span><span class="go-vnext">›</span></button>
+          <button class="action-card-vnext" data-view="productos" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext cyan">📦</span><span class="title-group-vnext"><strong>Productos</strong><small>Importar XLS y preparar lista</small></span></span><span class="go-vnext">›</span></button>
+          <button class="action-card-vnext" data-view="pedidos" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext warm">🧾</span><span class="title-group-vnext"><strong>Pedidos</strong><small>Visualizar y filtrar</small></span></span><span class="go-vnext">›</span></button>
+          <button class="action-card-vnext" data-view="clientes" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext soft">🏪</span><span class="title-group-vnext"><strong>Clientes</strong><small>Vista rápida</small></span></span><span class="go-vnext">›</span></button>
+          <button class="action-card-vnext" data-view="usuarios" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext soft">👤</span><span class="title-group-vnext"><strong>Usuarios</strong><small>Vendedores y colores</small></span></span><span class="go-vnext">›</span></button>
+          <button class="action-card-vnext" data-view="publicidad" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext blue">🖼️</span><span class="title-group-vnext"><strong>Publicidad</strong><small>Banners y carrusel</small></span></span><span class="go-vnext">›</span></button>
+        </section>
+      </section>
+
+      <section id="view-config" class="view admin-view">
+        <div class="admin-page-head"><button class="admin-home-btn" data-view="home" type="button">🏠</button><div><h2>Confi</h2><p>Editar textos principales, ticker e institucional.</p></div></div>
+        <form id="configForm" class="admin-form"></form>
+      </section>
+
+      <section id="view-productos" class="view admin-view">
+        <div class="admin-page-head"><button class="admin-home-btn" data-view="home" type="button">🏠</button><div><h2>Productos</h2><p>Importar XLS 97, normalizar columnas y previsualizar antes de guardar.</p></div></div>
+        <div class="admin-card">
+          <label class="admin-label">Archivo .xls / .xlsx</label>
+          <input id="xlsInput" class="admin-input" type="file" accept=".xls,.xlsx" />
+          <div class="admin-actions"><button id="btnParseXls" class="admin-btn primary" type="button">Previsualizar lista</button><button id="btnSaveProducts" class="admin-btn danger" type="button" disabled>Guardar en productos</button></div>
+          <label class="admin-check"><input id="confirmReplaceProducts" type="checkbox" /> Actualizar coincidencias por ID y agregar productos nuevos. No borra los que no estén en el XLS.</label>
+          <p id="xlsSummary" class="admin-note">Esperando archivo…</p>
+        </div>
+        <div id="productsPreview" class="admin-table-wrap"></div>
+      </section>
+
+      <section id="view-pedidos" class="view admin-view">
+        <div class="admin-page-head"><button class="admin-home-btn" data-view="home" type="button">🏠</button><div><h2>Pedidos</h2><p>Consulta de hoja pedidos con filtros básicos.</p></div></div>
+        <div class="admin-card admin-filter-grid">
+          <input id="orderFilterText" class="admin-input" placeholder="Buscar cliente, vendedor o producto" />
+          <input id="orderFilterFrom" class="admin-input" type="date" />
+          <input id="orderFilterTo" class="admin-input" type="date" />
+          <button id="btnLoadOrders" class="admin-btn primary" type="button">Cargar pedidos</button>
+        </div>
+        <p id="ordersSummary" class="admin-note"></p>
+        <div id="ordersTable" class="admin-table-wrap"></div>
+      </section>
+
+      <section id="view-clientes" class="view admin-view admin-simple-table-view"></section>
+      <section id="view-usuarios" class="view admin-view admin-simple-table-view"></section>
+      <section id="view-publicidad" class="view admin-view admin-simple-table-view"></section>
+    </main>
+  </div>
+
+  <div id="companyModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card company-modal-card-vnext">
+      <button id="closeCompanyModal" class="close-btn" type="button">×</button>
+      <div class="company-modal-head-vnext"><img src="icons/logo_d9.png" alt="D9" /><div><strong id="modalCompanyTitle">Distribuidora 9</strong><span id="modalCompanySubtitle">Panel Admin</span></div></div>
+      <div id="companyModalBody" class="company-modal-body-vnext"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="/app.js"></script>
 </body>
 </html>
