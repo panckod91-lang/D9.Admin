@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbyhcs6trzNcrN1M2Uf-8Wl0LYZ1D61o-iKEzeBInWirrAS8NJ0fUX3GCxJ0990E0hNkFQ/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v0.9.0-urlfix";
+const APP_VERSION = "v1.2.0-modalfix";
 
 const state = {
   config: {}, soporte: {}, clientes: [], productos: [], usuarios: [], publicidad: [], pedidos: [], importedProducts: []
@@ -372,27 +372,43 @@ function escapeHtml(str) {
 }
 
 function openCompanyModal() {
+  const modal = document.getElementById("companyModal");
+  const body = document.getElementById("companyModalBody");
+  if (!modal || !body) return;
+
   const insti1 = getConfigText("insti", "tex1") || "Panel administrativo D9.";
   const insti2 = getConfigText("insti", "tex2");
   const insti3 = getConfigText("insti", "tex3");
 
   const extras = [
-    ["Dirección", getConfigText("direc")],
+    ["Dirección", getConfigText("direc") || getConfigText("direccion")],
     ["WhatsApp", getConfigText("wasapp") || getConfigText("telefono_wa")],
-    ["Horarios", getConfigText("horarios")]
-  ].filter(x => x[1]);
+    ["Horarios", getConfigText("horarios")],
+    ["Email", getConfigText("email")],
+    ["Web", getConfigText("web")]
+  ].filter(([, v]) => String(v || "").trim());
 
-  const body = document.getElementById("companyModalBody");
-  if (body) {
-    body.innerHTML = `
-      <p>${insti1}</p>
-      ${insti2 ? `<p>${insti2}</p>` : ""}
-      ${insti3 ? `<p>${insti3}</p>` : ""}
-      ${extras.map(([k,v])=>`<p><b>${k}:</b> ${v}</p>`).join("")}
-    `;
-  }
+  body.innerHTML = `
+    <div class="company-info-text-d9">
+      <p>${escapeHtml(insti1)}</p>
+      ${insti2 ? `<p>${escapeHtml(insti2)}</p>` : ""}
+      ${insti3 ? `<p>${escapeHtml(insti3)}</p>` : ""}
+    </div>
 
-  document.getElementById("companyModal").classList.remove("hidden");
+    ${extras.length ? `
+      <div class="company-info-list-d9">
+        ${extras.map(([k, v]) => `
+          <div class="company-info-row-d9">
+            <span>${escapeHtml(k)}</span>
+            <strong>${escapeHtml(v)}</strong>
+          </div>
+        `).join("")}
+      </div>
+    ` : ""}
+  `;
+
+  modal.classList.remove("hidden");
+  modal.setAttribute("aria-hidden", "false");
 }
 
 function bindEvents() {
@@ -415,3 +431,21 @@ console.log("D9 Admin", APP_VERSION, API_BASE);
 bindEvents();
 loadBootstrap();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+
+
+function closeCompanyModal() {
+  const modal = document.getElementById("companyModal");
+  if (!modal) return;
+  modal.classList.add("hidden");
+  modal.setAttribute("aria-hidden", "true");
+}
+
+
+document.addEventListener("click", (e) => {
+  if (e.target.closest("#companyModal .ghost-x, #companyModal .close-btn, #companyModal [data-close-company], #companyModal button")) {
+    const modal = document.getElementById("companyModal");
+    if (modal && !modal.classList.contains("hidden") && e.target.textContent.trim() === "×") {
+      closeCompanyModal();
+    }
+  }
+});

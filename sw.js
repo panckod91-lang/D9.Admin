@@ -1,4 +1,4 @@
-const const CACHE_NAME = "d9-admin-v111";
+const CACHE_NAME = "d9-admin-v120-modalfix";
 
 self.addEventListener("install", event => {
   self.skipWaiting();
@@ -7,7 +7,7 @@ self.addEventListener("install", event => {
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.map(key => key !== const CACHE_NAME = "d9-admin-v111";
+      .then(keys => Promise.all(keys.map(key => key !== CACHE_NAME ? caches.delete(key) : null)))
       .then(() => self.clients.claim())
   );
 });

@@ -2784,4 +2784,183 @@ main{
 .toast.error { background: #991b1b; }
 .toast.ok { background: #065f46; }
 
-.header, .app-header{background:#0b2a5c !important;color:#fff !important}
+
+/* =========================================================
+   D9 ADMIN - MODAL INSTITUCIONAL FIX REAL v1.2
+   ========================================================= */
+
+#companyModal {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 999999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 18px !important;
+  background: rgba(8, 20, 42, .62) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  box-sizing: border-box !important;
+}
+
+#companyModal.hidden {
+  display: none !important;
+}
+
+#companyModal > *,
+#companyModal .modal-card,
+#companyModal .modal-content,
+#companyModal .modal-box,
+#companyModal .company-modal-card {
+  position: relative !important;
+  width: min(94vw, 620px) !important;
+  max-width: 620px !important;
+  max-height: 84dvh !important;
+  margin: auto !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border-radius: 30px !important;
+  background: #ffffff !important;
+  color: #173454 !important;
+  box-shadow: 0 28px 80px rgba(4, 18, 38, .38) !important;
+  padding: 0 !important;
+  transform: none !important;
+}
+
+#companyModal .modal-head,
+#companyModal .modal-header,
+#companyModal .modal-head-row,
+#companyModal .company-modal-head {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding: 18px 20px 12px !important;
+  border-bottom: 1px solid rgba(23, 52, 84, .09) !important;
+  background: #ffffff !important;
+}
+
+#companyModal h2,
+#companyModal h3,
+#companyModal .modal-title {
+  margin: 0 !important;
+  color: #173454 !important;
+  font-size: 22px !important;
+  line-height: 1.15 !important;
+  font-weight: 950 !important;
+}
+
+#companyModal .ghost-x,
+#companyModal .close-btn,
+#companyModal button {
+  flex: 0 0 auto !important;
+}
+
+#companyModal .ghost-x,
+#companyModal .close-btn,
+#companyModal button[aria-label="Cerrar"],
+#companyModal button[title="Cerrar"] {
+  width: 46px !important;
+  height: 46px !important;
+  border-radius: 16px !important;
+  border: 0 !important;
+  background: #eef7ff !important;
+  color: #173454 !important;
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+}
+
+#companyModalBody {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  padding: 18px 20px 22px !important;
+  color: #173454 !important;
+  background: #ffffff !important;
+  font-size: 16px !important;
+  line-height: 1.45 !important;
+  max-height: calc(84dvh - 72px) !important;
+}
+
+#companyModalBody,
+#companyModalBody * {
+  position: static !important;
+  transform: none !important;
+  float: none !important;
+}
+
+#companyModalBody img {
+  max-width: 120px !important;
+  max-height: 120px !important;
+  object-fit: contain !important;
+  display: block !important;
+  margin: 0 auto 14px !important;
+}
+
+#companyModalBody p {
+  margin: 0 0 12px !important;
+  color: #173454 !important;
+}
+
+.company-info-list-d9 {
+  margin-top: 16px !important;
+  padding-top: 14px !important;
+  border-top: 1px solid rgba(23,52,84,.10) !important;
+  display: grid !important;
+  gap: 10px !important;
+}
+
+.company-info-row-d9 {
+  padding: 12px 14px !important;
+  border-radius: 16px !important;
+  background: #f4faff !important;
+  border: 1px solid rgba(35,132,216,.12) !important;
+}
+
+.company-info-row-d9 span {
+  display: block !important;
+  color: #6f8294 !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+  margin-bottom: 4px !important;
+}
+
+.company-info-row-d9 strong {
+  display: block !important;
+  color: #173454 !important;
+  font-size: 15px !important;
+  line-height: 1.25 !important;
+  word-break: break-word !important;
+}
+
+/* Header contrast fix */
+.top-brand,
+.admin-header,
+.app-header,
+.header-card,
+.hero-card,
+.brand-card,
+#appHeader,
+#topHeader {
+  background: linear-gradient(135deg, #071a38 0%, #1648aa 58%, #2494dc 100%) !important;
+  color: #ffffff !important;
+}
+
+.top-brand *,
+.admin-header *,
+.app-header *,
+.header-card *,
+.hero-card *,
+brand-card *,
+#appHeader *,
+#topHeader * {
+  color: #ffffff !important;
+  text-shadow: 0 2px 7px rgba(0,0,0,.28) !important;
+}
+
