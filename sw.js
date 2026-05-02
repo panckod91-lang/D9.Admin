@@ -1,4 +1,4 @@
-const CACHE_NAME = "d9-admin-v120-modalfix";
+const CACHE_NAME = "d9-admin-v130-no-modal";
 
 self.addEventListener("install", event => {
   self.skipWaiting();

@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbyhcs6trzNcrN1M2Uf-8Wl0LYZ1D61o-iKEzeBInWirrAS8NJ0fUX3GCxJ0990E0hNkFQ/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v1.2.0-modalfix";
+const APP_VERSION = "v1.3.0-no-modal";
 
 const state = {
   config: {}, soporte: {}, clientes: [], productos: [], usuarios: [], publicidad: [], pedidos: [], importedProducts: []
@@ -372,43 +372,10 @@ function escapeHtml(str) {
 }
 
 function openCompanyModal() {
-  const modal = document.getElementById("companyModal");
-  const body = document.getElementById("companyModalBody");
-  if (!modal || !body) return;
-
-  const insti1 = getConfigText("insti", "tex1") || "Panel administrativo D9.";
-  const insti2 = getConfigText("insti", "tex2");
-  const insti3 = getConfigText("insti", "tex3");
-
-  const extras = [
-    ["Dirección", getConfigText("direc") || getConfigText("direccion")],
-    ["WhatsApp", getConfigText("wasapp") || getConfigText("telefono_wa")],
-    ["Horarios", getConfigText("horarios")],
-    ["Email", getConfigText("email")],
-    ["Web", getConfigText("web")]
-  ].filter(([, v]) => String(v || "").trim());
-
-  body.innerHTML = `
-    <div class="company-info-text-d9">
-      <p>${escapeHtml(insti1)}</p>
-      ${insti2 ? `<p>${escapeHtml(insti2)}</p>` : ""}
-      ${insti3 ? `<p>${escapeHtml(insti3)}</p>` : ""}
-    </div>
-
-    ${extras.length ? `
-      <div class="company-info-list-d9">
-        ${extras.map(([k, v]) => `
-          <div class="company-info-row-d9">
-            <span>${escapeHtml(k)}</span>
-            <strong>${escapeHtml(v)}</strong>
-          </div>
-        `).join("")}
-      </div>
-    ` : ""}
-  `;
-
-  modal.classList.remove("hidden");
-  modal.setAttribute("aria-hidden", "false");
+  return;
+}
+  // D9 Admin: el logo es solo identidad visual. El institucional se edita desde Confi.
+  return;
 }
 
 function bindEvents() {
@@ -433,19 +400,15 @@ loadBootstrap();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 
 
-function closeCompanyModal() {
-  const modal = document.getElementById("companyModal");
-  if (!modal) return;
-  modal.classList.add("hidden");
-  modal.setAttribute("aria-hidden", "true");
-}
-
-
+// D9 Admin: desactiva cualquier click institucional heredado del logo/header.
+window.__d9AdminDisableLogoModal = true;
 document.addEventListener("click", (e) => {
-  if (e.target.closest("#companyModal .ghost-x, #companyModal .close-btn, #companyModal [data-close-company], #companyModal button")) {
-    const modal = document.getElementById("companyModal");
-    if (modal && !modal.classList.contains("hidden") && e.target.textContent.trim() === "×") {
-      closeCompanyModal();
-    }
+  const logoTap = e.target.closest?.("#btnCompany, #companyBtn, #brandLogo, .brand-logo, .admin-logo, .app-logo, .top-brand");
+  if (!logoTap) return;
+  // Permitimos clicks normales en botones internos si existieran, pero bloqueamos modal institucional heredado.
+  if (logoTap.closest?.("button, a") || logoTap.matches?.("button, a, .top-brand")) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
   }
-});
+}, true);
