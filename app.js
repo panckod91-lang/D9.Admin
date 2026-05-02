@@ -1,5 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbxE5JByaA5iSrvIhD7S4WTgYBWL4ZPZYkf3Gi6lKQ8Xo8oov20HLhaeyeUMKjeglsHTPA/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
+const APP_VERSION = "v0.6.0";
 
 const state = {
   config: {}, soporte: {}, clientes: [], productos: [], usuarios: [], publicidad: [], pedidos: [], importedProducts: []
@@ -45,7 +46,7 @@ async function loadBootstrap() {
     applyHeader();
     $("#networkStatus").textContent = "Online";
     $("#networkStatus").classList.remove("muted");
-    toast("Datos cargados desde Sheet DEV");
+    toast(`Datos cargados desde Sheet DEV · ${APP_VERSION}`);
   } catch (err) {
     $("#networkStatus").textContent = "Error API";
     toast("No se pudo leer el script DEV", "error");
@@ -173,27 +174,55 @@ function renderProductsPreview() {
 
 async function saveImportedProducts() {
   if (!state.importedProducts.length) return toast("No hay productos importados", "error");
-  if (!$("#confirmReplaceProducts").checked) return toast("Marcá la confirmación para reemplazar productos", "error");
-  const result = await apiPost({ action: "update_productos", productos: state.importedProducts });
-  toast(`Productos OK · actualizados: ${result.actualizados || 0} · agregados: ${result.agregados || 0}`);
-  await loadBootstrap();
+  if (!$("#confirmReplaceProducts").checked) return toast("Marcá la confirmación para actualizar productos", "error");
+
+  $("#btnSaveProducts").disabled = true;
+  toast("Guardando productos en Sheet DEV…");
+
+  try {
+    const result = await apiPost({ action: "update_productos", productos: state.importedProducts });
+    toast(`Productos OK · actualizados: ${result.actualizados || 0} · agregados: ${result.agregados || 0}`);
+    $("#xlsSummary").textContent = `Guardado OK · recibidos ${result.recibidos || state.importedProducts.length} · válidos ${result.validos || state.importedProducts.length} · actualizados ${result.actualizados || 0} · agregados ${result.agregados || 0} · total hoja ${result.total_hoja || "?"}`;
+    await loadBootstrap();
+  } catch (err) {
+    console.error(err);
+    toast("No se pudo guardar productos: " + err.message, "error");
+    $("#xlsSummary").textContent = "Error guardando productos: " + err.message;
+  } finally {
+    $("#btnSaveProducts").disabled = false;
+  }
 }
 
 async function loadOrders() {
   const url = `${API_BASE}?action=list_pedidos&ts=${Date.now()}`;
   try {
     $("#ordersSummary").textContent = "Cargando pedidos…";
-    const res = await fetch(url, { cache: "no-store" });
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.error || "No se pudo cargar pedidos");
+    $("#ordersTable").innerHTML = "";
 
-    state.pedidos = (data.pedidos || []).map(normalizeOrderRow);
+    const res = await fetch(url, { cache: "no-store", redirect: "follow" });
+    const text = await res.text();
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch (err) {
+      throw new Error("El script no devolvió JSON: " + text.slice(0, 120));
+    }
+
+    const rawPedidos = Array.isArray(data) ? data : (Array.isArray(data.pedidos) ? data.pedidos : []);
+
+    if (!data.ok && !Array.isArray(data)) {
+      throw new Error(data.error || "Respuesta sin OK");
+    }
+
+    state.pedidos = rawPedidos.map(normalizeOrderRow);
     renderOrders();
     toast(`Pedidos cargados: ${state.pedidos.length}`);
   } catch (err) {
     console.error(err);
     state.pedidos = [];
-    renderOrders();
+    $("#ordersSummary").textContent = "Error cargando pedidos: " + err.message;
+    $("#ordersTable").innerHTML = `<div class="admin-card"><strong>Pedidos</strong><p class="admin-note">No se pudieron cargar. Probá abrir /exec?action=list_pedidos.</p></div>`;
     toast("No se pudieron cargar pedidos", "error");
   }
 }
@@ -296,9 +325,38 @@ function formatCell(v, key = "") {
 }
 
 async function apiPost(payload) {
-  const r = await fetch(API_BASE, { method: "POST", body: JSON.stringify(payload) });
-  const data = await r.json();
-  if (!data.ok) throw new Error(data.error || "Error API");
+  const body = JSON.stringify(payload);
+
+  async function tryPost(options) {
+    const r = await fetch(API_BASE, {
+      method: "POST",
+      cache: "no-store",
+      redirect: "follow",
+      ...options
+    });
+    const text = await r.text();
+    try {
+      return JSON.parse(text);
+    } catch (err) {
+      throw new Error("Respuesta no JSON del script: " + text.slice(0, 160));
+    }
+  }
+
+  let data;
+  try {
+    data = await tryPost({
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body
+    });
+  } catch (firstErr) {
+    console.warn("POST text/plain falló, pruebo payload form", firstErr);
+    data = await tryPost({
+      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=utf-8" },
+      body: "payload=" + encodeURIComponent(body)
+    });
+  }
+
+  if (!data.ok) throw new Error(data.error || data.message || "Error API");
   return data;
 }
 
@@ -330,6 +388,7 @@ function bindEvents() {
   $("#orderFilterTo").onchange = renderOrders;
 }
 
+console.log("D9 Admin", APP_VERSION, API_BASE);
 bindEvents();
 loadBootstrap();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
