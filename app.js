@@ -20,8 +20,14 @@ function toast(msg, type = "ok") {
 
 function getConfigText(key, sub = "tex1") {
   const v = state.config?.[key];
-  if (v && typeof v === "object") return v[sub] ?? "";
-  return v ?? "";
+  if (v === null || v === undefined) return "";
+
+  // 🔥 CLAVE: no repetir tex1 en tex2/tex3
+  if (typeof v !== "object") {
+    return sub === "tex1" ? String(v ?? "") : "";
+  }
+
+  return v[sub] ?? "";
 }
 
 function setView(name) {
@@ -71,7 +77,7 @@ function renderConfigForm() {
     { key: "ticker_color", label: "Ticker - colores", type: "triple" },
     { key: "carrusel", label: "Carrusel / velocidad", type: "single" },
     { key: "insti", label: "Institucional", type: "triple", area: true },
-    { key: "direccion", label: "Dirección", type: "single" },
+    { key: "direc", label: "Dirección", type: "single" },
     { key: "email", label: "Email", type: "single" },
     { key: "web", label: "Web", type: "single" }
   ];
