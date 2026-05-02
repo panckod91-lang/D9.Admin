@@ -2785,7 +2785,7 @@ main{
 .toast.ok { background: #065f46; }
 
 
-/* === D9 Admin v1.3: header premium + logo sin modal === */
+/* === D9 Admin v1.4: header premium + logo sin acción === */
 .top-brand,
 .admin-header,
 .app-header,
@@ -2826,7 +2826,7 @@ main{
 #empresaLabel,
 .app-subtitle,
 .brand-subtitle {
-  opacity: .88 !important;
+  opacity: .90 !important;
 }
 
 #btnCompany,
@@ -2834,12 +2834,6 @@ main{
 #brandLogo,
 .brand-logo,
 .admin-logo,
-.app-logo,
-.top-brand {
+.app-logo {
   cursor: default !important;
-}
-
-/* Si quedó el modal institucional en HTML, queda inutilizado visualmente. */
-#companyModal:not(.force-show) {
-  display: none !important;
 }

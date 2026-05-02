@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbyhcs6trzNcrN1M2Uf-8Wl0LYZ1D61o-iKEzeBInWirrAS8NJ0fUX3GCxJ0990E0hNkFQ/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v1.3.0-no-modal";
+const APP_VERSION = "v1.4.0-safe-no-modal";
 
 const state = {
   config: {}, soporte: {}, clientes: [], productos: [], usuarios: [], publicidad: [], pedidos: [], importedProducts: []
@@ -372,9 +372,8 @@ function escapeHtml(str) {
 }
 
 function openCompanyModal() {
-  return;
-}
-  // D9 Admin: el logo es solo identidad visual. El institucional se edita desde Confi.
+  // D9 Admin: el logo queda solo como identidad visual.
+  // El institucional se edita desde Confi y lo muestra D9 Pedidos.
   return;
 }
 
@@ -398,17 +397,3 @@ console.log("D9 Admin", APP_VERSION, API_BASE);
 bindEvents();
 loadBootstrap();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
-
-
-// D9 Admin: desactiva cualquier click institucional heredado del logo/header.
-window.__d9AdminDisableLogoModal = true;
-document.addEventListener("click", (e) => {
-  const logoTap = e.target.closest?.("#btnCompany, #companyBtn, #brandLogo, .brand-logo, .admin-logo, .app-logo, .top-brand");
-  if (!logoTap) return;
-  // Permitimos clicks normales en botones internos si existieran, pero bloqueamos modal institucional heredado.
-  if (logoTap.closest?.("button, a") || logoTap.matches?.("button, a, .top-brand")) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
-  }
-}, true);
