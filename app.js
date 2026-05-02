@@ -372,11 +372,27 @@ function escapeHtml(str) {
 }
 
 function openCompanyModal() {
-  const insti = getConfigText("insti", "tex1") || "Panel administrativo D9.";
+  const insti1 = getConfigText("insti", "tex1") || "Panel administrativo D9.";
   const insti2 = getConfigText("insti", "tex2");
   const insti3 = getConfigText("insti", "tex3");
-  $("#companyModalBody").innerHTML = `<p>${escapeHtml(insti)}</p>${insti2 ? `<p>${escapeHtml(insti2)}</p>` : ""}${insti3 ? `<p>${escapeHtml(insti3)}</p>` : ""}<hr><p><strong>WhatsApp:</strong> ${escapeHtml(getConfigText("telefono_wa"))}</p>`;
-  $("#companyModal").classList.remove("hidden");
+
+  const extras = [
+    ["Dirección", getConfigText("direc")],
+    ["WhatsApp", getConfigText("wasapp") || getConfigText("telefono_wa")],
+    ["Horarios", getConfigText("horarios")]
+  ].filter(x => x[1]);
+
+  const body = document.getElementById("companyModalBody");
+  if (body) {
+    body.innerHTML = `
+      <p>${insti1}</p>
+      ${insti2 ? `<p>${insti2}</p>` : ""}
+      ${insti3 ? `<p>${insti3}</p>` : ""}
+      ${extras.map(([k,v])=>`<p><b>${k}:</b> ${v}</p>`).join("")}
+    `;
+  }
+
+  document.getElementById("companyModal").classList.remove("hidden");
 }
 
 function bindEvents() {

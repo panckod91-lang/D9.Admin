@@ -2783,3 +2783,5 @@ main{
 .admin-table th, .admin-table td { padding: 8px 9px; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
 .toast.error { background: #991b1b; }
 .toast.ok { background: #065f46; }
+
+.header, .app-header{background:#0b2a5c !important;color:#fff !important}
