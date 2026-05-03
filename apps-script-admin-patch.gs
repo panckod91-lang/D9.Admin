@@ -173,6 +173,10 @@ function doPost(e) {
       return jsonOut(actualizarClientes_(ss, data));
     }
 
+    if (action === "update_usuarios" || action === "upsert_usuarios") {
+      return jsonOut(actualizarUsuarios_(ss, data));
+    }
+
     if (action === "update_productos" || action === "upsert_productos") {
       return jsonOut(actualizarProductos_(ss, data));
     }
@@ -391,6 +395,91 @@ function normalizarClienteAdmin_(c) {
     direccion: String(c.direccion || "").trim(),
     ciudad: String(c.ciudad || c.localidad || "").trim(),
     activo: normalizarActivoAdmin_(c.activo)
+  };
+}
+
+
+
+// ─── ADMIN USUARIOS ──────────────────────────────────────────────────
+
+function actualizarUsuarios_(ss, data) {
+  const sh = ss.getSheetByName("usuarios");
+  if (!sh) return { ok: false, error: "No existe la hoja usuarios" };
+
+  const incoming = Array.isArray(data.usuarios) ? data.usuarios : [];
+  if (!incoming.length) return { ok: false, error: "No llegaron usuarios para guardar" };
+
+  const requiredHeaders = ["id", "usuario", "nombre", "clave", "rol", "wasap_report", "cliente_id", "activo"];
+  let lastCol = Math.max(sh.getLastColumn(), requiredHeaders.length);
+  let headers = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(normalizarHeader_);
+
+  requiredHeaders.forEach(h => {
+    if (!headers.includes(h)) {
+      lastCol++;
+      sh.getRange(1, lastCol).setValue(h);
+      headers.push(h);
+    }
+  });
+
+  const idCol = headers.indexOf("id") + 1;
+  if (idCol <= 0) return { ok: false, error: "La hoja usuarios no tiene columna id" };
+
+  const lastRow = sh.getLastRow();
+  const rows = lastRow >= 2 ? sh.getRange(2, 1, lastRow - 1, headers.length).getValues() : [];
+
+  const indexPorId = {};
+  rows.forEach((row, i) => {
+    const id = String(row[idCol - 1] || "").trim();
+    if (id) indexPorId[id] = i + 2;
+  });
+
+  let actualizados = 0;
+  let agregados = 0;
+
+  incoming.forEach(raw => {
+    const u = normalizarUsuarioAdmin_(raw);
+    if (!u.id || !u.usuario || !u.nombre) return;
+
+    const rowValues = new Array(headers.length).fill("");
+
+    if (indexPorId[u.id]) {
+      const current = sh.getRange(indexPorId[u.id], 1, 1, headers.length).getValues()[0];
+      headers.forEach((h, i) => rowValues[i] = current[i]);
+    }
+
+    Object.keys(u).forEach(key => {
+      const idx = headers.indexOf(key);
+      if (idx >= 0) rowValues[idx] = u[key];
+    });
+
+    if (indexPorId[u.id]) {
+      sh.getRange(indexPorId[u.id], 1, 1, headers.length).setValues([rowValues]);
+      actualizados++;
+    } else {
+      sh.appendRow(rowValues);
+      agregados++;
+    }
+  });
+
+  return {
+    ok: true,
+    actualizados,
+    agregados,
+    recibidos: incoming.length,
+    mensaje: "Usuarios actualizados por id."
+  };
+}
+
+function normalizarUsuarioAdmin_(u) {
+  return {
+    id: String(u.id || "").trim(),
+    usuario: String(u.usuario || "").trim().toLowerCase(),
+    nombre: String(u.nombre || "").trim(),
+    clave: String(u.clave || "").trim(),
+    rol: String(u.rol || "vendedor").trim().toLowerCase(),
+    wasap_report: String(u.wasap_report || "").trim(),
+    cliente_id: String(u.cliente_id || "").trim(),
+    activo: normalizarActivoAdmin_(u.activo)
   };
 }
 

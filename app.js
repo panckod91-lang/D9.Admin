@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbyhcs6trzNcrN1M2Uf-8Wl0LYZ1D61o-iKEzeBInWirrAS8NJ0fUX3GCxJ0990E0hNkFQ/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v1.6.0-clientes-nuevo";
+const APP_VERSION = "v1.7.0-usuarios";
 
 const state = {
   config: {}, soporte: {}, clientes: [], productos: [], usuarios: [], publicidad: [], pedidos: [], importedProducts: []
@@ -37,7 +37,8 @@ function setView(name) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 
   if (name === "clientes") renderClientesView();
-  if (["usuarios", "publicidad"].includes(name)) renderSimpleTable(name);
+  if (name === "usuarios") renderUsuariosView();
+  if (["publicidad"].includes(name)) renderSimpleTable(name);
   if (name === "config") renderConfigForm();
 }
 
@@ -474,6 +475,189 @@ async function saveClientEdit(ev) {
   }
 }
 
+
+function normalizeUserRow(u = {}) {
+  return {
+    id: String(u.id ?? "").trim(),
+    usuario: String(u.usuario ?? "").trim(),
+    nombre: String(u.nombre ?? "").trim(),
+    clave: String(u.clave ?? "").trim(),
+    rol: String(u.rol ?? "vendedor").trim() || "vendedor",
+    wasap_report: String(u.wasap_report ?? "").trim(),
+    cliente_id: String(u.cliente_id ?? "").trim(),
+    activo: String(u.activo ?? "si").trim() || "si"
+  };
+}
+
+function renderUsuariosView() {
+  const container = $("#view-usuarios");
+  if (!container) return;
+
+  const term = String($("#userFilter")?.value || "").trim().toLowerCase();
+
+  const rows = (state.usuarios || [])
+    .map(normalizeUserRow)
+    .filter(u => {
+      if (!term) return true;
+      return [u.id, u.usuario, u.nombre, u.rol, u.wasap_report, u.cliente_id, u.activo]
+        .join(" ")
+        .toLowerCase()
+        .includes(term);
+    })
+    .sort((a, b) => String(a.nombre || a.usuario || "").localeCompare(String(b.nombre || b.usuario || ""), "es", { sensitivity: "base", numeric: true }));
+
+  container.innerHTML = `
+    <div class="admin-page-head">
+      <button class="admin-home-btn" data-view="home" type="button">🏠</button>
+      <div>
+        <h2>Usuarios</h2>
+        <p>Buscar, editar y crear usuarios.</p>
+      </div>
+    </div>
+
+    <div class="admin-card admin-user-tools">
+      <input id="userFilter" class="admin-input" placeholder="Buscar usuario, nombre, rol o WhatsApp" value="${escapeHtml(term)}" />
+      <button id="btnNewUser" class="admin-btn primary" type="button">+ Nuevo usuario</button>
+      <p class="admin-note">${rows.length} usuario${rows.length === 1 ? "" : "s"} mostrado${rows.length === 1 ? "" : "s"} · ${state.usuarios.length} total</p>
+    </div>
+
+    <div id="userEditorWrap"></div>
+
+    <div class="admin-card">
+      <strong>Usuarios</strong>
+      <div class="user-list-admin-d9">
+        ${rows.length ? rows.slice(0, 500).map(u => `
+          <button class="user-row-admin-d9" type="button" data-user-edit="${escapeHtml(u.id)}">
+            <span>
+              <strong>${escapeHtml(u.nombre || u.usuario || "Sin nombre")}</strong>
+              <small>${escapeHtml([u.usuario, u.rol, u.wasap_report].filter(Boolean).join(" · ") || "Sin datos extra")}</small>
+            </span>
+            <em>${escapeHtml(u.activo || "si")}</em>
+          </button>
+        `).join("") : `<p class="admin-note">No encontré usuarios con ese filtro.</p>`}
+      </div>
+    </div>
+  `;
+
+  const newBtn = $("#btnNewUser");
+  if (newBtn) newBtn.onclick = openNewUserEditor;
+
+  const filter = $("#userFilter");
+  if (filter) {
+    filter.oninput = () => renderUsuariosView();
+    filter.focus();
+    filter.setSelectionRange(filter.value.length, filter.value.length);
+  }
+}
+
+function nextUserIdAdminD9() {
+  const nums = (state.usuarios || [])
+    .map(u => Number(String(u.id || "").replace(/\D+/g, "")))
+    .filter(n => Number.isFinite(n) && n > 0);
+
+  const next = nums.length ? Math.max(...nums) + 1 : 1;
+  return String(next);
+}
+
+function openNewUserEditor() {
+  openUserEditor("", true);
+}
+
+function openUserEditor(id, isNew = false) {
+  const original = isNew ? null : (state.usuarios || []).find(u => String(u.id) === String(id));
+  if (!isNew && !original) return toast("No encontré ese usuario", "error");
+
+  const u = isNew
+    ? { id: nextUserIdAdminD9(), usuario: "", nombre: "", clave: "", rol: "vendedor", wasap_report: "", cliente_id: "", activo: "si" }
+    : normalizeUserRow(original);
+
+  const wrap = $("#userEditorWrap");
+  if (!wrap) return;
+
+  wrap.innerHTML = `
+    <form id="userEditForm" class="admin-card user-editor-admin-d9">
+      <strong>${isNew ? "Nuevo usuario" : "Editar usuario"}</strong>
+      <p class="admin-note">${isNew ? "Se agregará como una fila nueva en usuarios." : "Se actualizará el usuario existente por ID."}</p>
+
+      <div class="admin-form-grid">
+        <label class="admin-label">ID
+          <input class="admin-input" data-user-field="id" value="${escapeHtml(u.id)}" ${isNew ? "" : "readonly"} />
+        </label>
+
+        <label class="admin-label">Usuario
+          <input class="admin-input" data-user-field="usuario" value="${escapeHtml(u.usuario)}" />
+        </label>
+
+        <label class="admin-label">Nombre
+          <input class="admin-input" data-user-field="nombre" value="${escapeHtml(u.nombre)}" />
+        </label>
+
+        <label class="admin-label">Clave
+          <input class="admin-input" data-user-field="clave" value="${escapeHtml(u.clave)}" />
+        </label>
+
+        <label class="admin-label">Rol
+          <select class="admin-input" data-user-field="rol">
+            <option value="vendedor" ${u.rol === "vendedor" ? "selected" : ""}>vendedor</option>
+            <option value="cliente" ${u.rol === "cliente" ? "selected" : ""}>cliente</option>
+            <option value="admin" ${u.rol === "admin" ? "selected" : ""}>admin</option>
+          </select>
+        </label>
+
+        <label class="admin-label">WhatsApp report
+          <input class="admin-input" data-user-field="wasap_report" value="${escapeHtml(u.wasap_report)}" />
+        </label>
+
+        <label class="admin-label">Cliente ID
+          <input class="admin-input" data-user-field="cliente_id" value="${escapeHtml(u.cliente_id)}" />
+        </label>
+
+        <label class="admin-label">Activo
+          <select class="admin-input" data-user-field="activo">
+            <option value="si" ${String(u.activo).toLowerCase() !== "no" ? "selected" : ""}>si</option>
+            <option value="no" ${String(u.activo).toLowerCase() === "no" ? "selected" : ""}>no</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="admin-actions sticky-actions">
+        <button class="admin-btn" type="button" id="btnCancelUserEdit">Cancelar</button>
+        <button class="admin-btn primary" type="submit">${isNew ? "Crear usuario" : "Guardar usuario"}</button>
+      </div>
+    </form>
+  `;
+
+  $("#btnCancelUserEdit").onclick = () => {
+    wrap.innerHTML = "";
+  };
+
+  $("#userEditForm").onsubmit = saveUserEdit;
+  wrap.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function saveUserEdit(ev) {
+  ev.preventDefault();
+
+  const usuario = {};
+  $$("[data-user-field]").forEach(input => {
+    usuario[input.dataset.userField] = String(input.value || "").trim();
+  });
+
+  if (!usuario.id) return toast("Usuario sin ID", "error");
+  if (!usuario.usuario) return toast("Cargá el usuario", "error");
+  if (!usuario.nombre) return toast("Cargá el nombre", "error");
+
+  try {
+    const result = await apiPost({ action: "update_usuarios", usuarios: [usuario] });
+    toast(`Usuario guardado · actualizados: ${result.actualizados || 0} · nuevos: ${result.agregados || 0}`);
+    await loadBootstrap();
+    renderUsuariosView();
+  } catch (err) {
+    console.error(err);
+    toast("No se pudo guardar usuario: " + err.message, "error");
+  }
+}
+
 function renderSimpleTable(name) {
   const data = state[name] || [];
   const title = name[0].toUpperCase() + name.slice(1);
@@ -559,6 +743,9 @@ function bindEvents() {
   document.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-client-edit]");
     if (btn) openClientEditor(btn.dataset.clientEdit);
+
+    const userBtn = e.target.closest("[data-user-edit]");
+    if (userBtn) openUserEditor(userBtn.dataset.userEdit);
   });
 }
 
