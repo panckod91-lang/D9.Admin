@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbyhcs6trzNcrN1M2Uf-8Wl0LYZ1D61o-iKEzeBInWirrAS8NJ0fUX3GCxJ0990E0hNkFQ/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v1.8.0-usuarios-plus";
+const APP_VERSION = "v1.9.0-usuario-cliente-nombre";
 
 const state = {
   config: {}, soporte: {}, clientes: [], productos: [], usuarios: [], publicidad: [], pedidos: [], importedProducts: []
@@ -659,6 +659,11 @@ function openUserEditor(id, isNew = false) {
     roleSelect.onchange = updateUserRoleFieldsD9;
   }
 
+  const clientSelect = document.querySelector('[data-user-field="cliente_id"]');
+  if (clientSelect) {
+    clientSelect.onchange = fillUserNameFromSelectedClientD9;
+  }
+
   $$(".color-input-d9").forEach(colorInput => {
     colorInput.addEventListener("input", () => {
       const textInput = document.querySelector(`[data-color-text-for="${colorInput.dataset.userField}"]`);
@@ -680,10 +685,26 @@ function openUserEditor(id, isNew = false) {
   wrap.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+
+function fillUserNameFromSelectedClientD9() {
+  const role = document.querySelector('[data-user-field="rol"]')?.value || "";
+  if (role !== "cliente") return;
+
+  const clientId = document.querySelector('[data-user-field="cliente_id"]')?.value || "";
+  if (!clientId) return;
+
+  const cliente = (state.clientes || []).find(c => String(c.id) === String(clientId));
+  if (!cliente) return;
+
+  const nameInput = document.querySelector('[data-user-field="nombre"]');
+  if (nameInput) nameInput.value = String(cliente.nombre || "").trim();
+}
+
 function updateUserRoleFieldsD9() {
   const role = document.querySelector('[data-user-field="rol"]')?.value || "";
   $$(".user-client-field-d9").forEach(el => el.classList.toggle("hidden", role !== "cliente"));
   $$(".user-color-field-d9").forEach(el => el.classList.toggle("hidden", role !== "vendedor"));
+  fillUserNameFromSelectedClientD9();
 }
 
 async function saveUserEdit(ev) {
