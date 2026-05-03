@@ -3192,3 +3192,76 @@ main{
   object-fit: contain !important;
   display: block !important;
 }
+
+
+/* === D9 Admin v2.0.1 Publicidad overflow mobile fix === */
+html,
+body {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+* {
+  box-sizing: border-box !important;
+}
+
+.view,
+.admin-card,
+.admin-page,
+#view-publicidad,
+#view-publicidad * {
+  max-width: 100% !important;
+}
+
+#view-publicidad {
+  overflow-x: hidden !important;
+}
+
+.ad-list-admin-d9 {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+.ad-row-admin-d9 {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.ad-row-admin-d9 span {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+.ad-row-admin-d9 strong,
+.ad-row-admin-d9 small {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.ad-row-admin-d9 em {
+  max-width: 56px !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+}
+
+#view-publicidad .admin-input,
+#view-publicidad input,
+#view-publicidad select,
+#view-publicidad textarea {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+#view-publicidad .admin-card {
+  overflow: hidden !important;
+}
+
