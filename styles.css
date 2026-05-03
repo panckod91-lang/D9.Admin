@@ -3003,3 +3003,27 @@ main{
   border: 2px solid rgba(36,137,190,.22) !important;
   box-shadow: 0 14px 35px rgba(21,91,145,.12) !important;
 }
+
+
+/* === D9 Admin v1.8 Usuarios plus === */
+.color-picker-row-d9 {
+  display: grid !important;
+  grid-template-columns: 64px 1fr !important;
+  gap: 10px !important;
+  align-items: center !important;
+}
+
+.color-input-d9 {
+  height: 52px !important;
+  padding: 5px !important;
+  border-radius: 16px !important;
+}
+
+.color-text-d9 {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  text-transform: uppercase !important;
+}
+
+.hidden {
+  display: none !important;
+}

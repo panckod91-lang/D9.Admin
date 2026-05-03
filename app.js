@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbyhcs6trzNcrN1M2Uf-8Wl0LYZ1D61o-iKEzeBInWirrAS8NJ0fUX3GCxJ0990E0hNkFQ/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v1.7.0-usuarios";
+const APP_VERSION = "v1.8.0-usuarios-plus";
 
 const state = {
   config: {}, soporte: {}, clientes: [], productos: [], usuarios: [], publicidad: [], pedidos: [], importedProducts: []
@@ -485,6 +485,8 @@ function normalizeUserRow(u = {}) {
     rol: String(u.rol ?? "vendedor").trim() || "vendedor",
     wasap_report: String(u.wasap_report ?? "").trim(),
     cliente_id: String(u.cliente_id ?? "").trim(),
+    color_1: String(u.color_1 ?? "#DDEEFF").trim() || "#DDEEFF",
+    color_2: String(u.color_2 ?? "#FFFFFF").trim() || "#FFFFFF",
     activo: String(u.activo ?? "si").trim() || "si"
   };
 }
@@ -568,7 +570,7 @@ function openUserEditor(id, isNew = false) {
   if (!isNew && !original) return toast("No encontré ese usuario", "error");
 
   const u = isNew
-    ? { id: nextUserIdAdminD9(), usuario: "", nombre: "", clave: "", rol: "vendedor", wasap_report: "", cliente_id: "", activo: "si" }
+    ? { id: nextUserIdAdminD9(), usuario: "", nombre: "", clave: "", rol: "vendedor", wasap_report: "", cliente_id: "", color_1: "#DDEEFF", color_2: "#FFFFFF", activo: "si" }
     : normalizeUserRow(original);
 
   const wrap = $("#userEditorWrap");
@@ -608,8 +610,29 @@ function openUserEditor(id, isNew = false) {
           <input class="admin-input" data-user-field="wasap_report" value="${escapeHtml(u.wasap_report)}" />
         </label>
 
-        <label class="admin-label">Cliente ID
-          <input class="admin-input" data-user-field="cliente_id" value="${escapeHtml(u.cliente_id)}" />
+        <label class="admin-label user-client-field-d9">Cliente vinculado
+          <select class="admin-input" data-user-field="cliente_id">
+            <option value="">Sin cliente vinculado</option>
+            ${(state.clientes || []).map(c => `
+              <option value="${escapeHtml(c.id)}" ${String(u.cliente_id) === String(c.id) ? "selected" : ""}>
+                ${escapeHtml(c.nombre || c.id)}
+              </option>
+            `).join("")}
+          </select>
+        </label>
+
+        <label class="admin-label user-color-field-d9">Color 1 vendedor
+          <div class="color-picker-row-d9">
+            <input class="admin-input color-input-d9" type="color" data-user-field="color_1" value="${escapeHtml(/^#[0-9a-fA-F]{6}$/.test(u.color_1) ? u.color_1 : "#DDEEFF")}" />
+            <input class="admin-input color-text-d9" data-color-text-for="color_1" value="${escapeHtml(u.color_1 || "#DDEEFF")}" />
+          </div>
+        </label>
+
+        <label class="admin-label user-color-field-d9">Color 2 vendedor
+          <div class="color-picker-row-d9">
+            <input class="admin-input color-input-d9" type="color" data-user-field="color_2" value="${escapeHtml(/^#[0-9a-fA-F]{6}$/.test(u.color_2) ? u.color_2 : "#FFFFFF")}" />
+            <input class="admin-input color-text-d9" data-color-text-for="color_2" value="${escapeHtml(u.color_2 || "#FFFFFF")}" />
+          </div>
         </label>
 
         <label class="admin-label">Activo
@@ -631,8 +654,36 @@ function openUserEditor(id, isNew = false) {
     wrap.innerHTML = "";
   };
 
+  const roleSelect = document.querySelector('[data-user-field="rol"]');
+  if (roleSelect) {
+    roleSelect.onchange = updateUserRoleFieldsD9;
+  }
+
+  $$(".color-input-d9").forEach(colorInput => {
+    colorInput.addEventListener("input", () => {
+      const textInput = document.querySelector(`[data-color-text-for="${colorInput.dataset.userField}"]`);
+      if (textInput) textInput.value = colorInput.value.toUpperCase();
+    });
+  });
+
+  $$(".color-text-d9").forEach(textInput => {
+    textInput.addEventListener("input", () => {
+      const key = textInput.dataset.colorTextFor;
+      const colorInput = document.querySelector(`[data-user-field="${key}"]`);
+      const value = textInput.value.trim();
+      if (colorInput && /^#[0-9a-fA-F]{6}$/.test(value)) colorInput.value = value;
+    });
+  });
+
   $("#userEditForm").onsubmit = saveUserEdit;
+  updateUserRoleFieldsD9();
   wrap.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function updateUserRoleFieldsD9() {
+  const role = document.querySelector('[data-user-field="rol"]')?.value || "";
+  $$(".user-client-field-d9").forEach(el => el.classList.toggle("hidden", role !== "cliente"));
+  $$(".user-color-field-d9").forEach(el => el.classList.toggle("hidden", role !== "vendedor"));
 }
 
 async function saveUserEdit(ev) {
@@ -641,6 +692,11 @@ async function saveUserEdit(ev) {
   const usuario = {};
   $$("[data-user-field]").forEach(input => {
     usuario[input.dataset.userField] = String(input.value || "").trim();
+  });
+
+  $$(".color-text-d9").forEach(input => {
+    const key = input.dataset.colorTextFor;
+    if (key) usuario[key] = String(input.value || "").trim();
   });
 
   if (!usuario.id) return toast("Usuario sin ID", "error");

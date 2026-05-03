@@ -409,7 +409,7 @@ function actualizarUsuarios_(ss, data) {
   const incoming = Array.isArray(data.usuarios) ? data.usuarios : [];
   if (!incoming.length) return { ok: false, error: "No llegaron usuarios para guardar" };
 
-  const requiredHeaders = ["id", "usuario", "nombre", "clave", "rol", "wasap_report", "cliente_id", "activo"];
+  const requiredHeaders = ["id", "usuario", "nombre", "clave", "rol", "wasap_report", "cliente_id", "color_1", "color_2", "activo"];
   let lastCol = Math.max(sh.getLastColumn(), requiredHeaders.length);
   let headers = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(normalizarHeader_);
 
@@ -470,6 +470,11 @@ function actualizarUsuarios_(ss, data) {
   };
 }
 
+function normalizarColorAdmin_(value) {
+  const v = String(value || "").trim();
+  return /^#[0-9A-Fa-f]{6}$/.test(v) ? v.toUpperCase() : "";
+}
+
 function normalizarUsuarioAdmin_(u) {
   return {
     id: String(u.id || "").trim(),
@@ -479,6 +484,8 @@ function normalizarUsuarioAdmin_(u) {
     rol: String(u.rol || "vendedor").trim().toLowerCase(),
     wasap_report: String(u.wasap_report || "").trim(),
     cliente_id: String(u.cliente_id || "").trim(),
+    color_1: normalizarColorAdmin_(u.color_1 || ""),
+    color_2: normalizarColorAdmin_(u.color_2 || ""),
     activo: normalizarActivoAdmin_(u.activo)
   };
 }
