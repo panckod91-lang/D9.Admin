@@ -1,6 +1,6 @@
-const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
+const API_BASE = "https://script.google.com/macros/s/AKfycbyhcs6trzNcrN1M2Uf-8Wl0LYZ1D61o-iKEzeBInWirrAS8NJ0fUX3GCxJ0990E0hNkFQ/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v1.0.0 (integración)";
+const APP_VERSION = "v2.0.2-publicidad-safe";
 
 const state = {
   config: {}, soporte: {}, clientes: [], productos: [], usuarios: [], publicidad: [], pedidos: [], importedProducts: []
@@ -54,30 +54,11 @@ async function loadBootstrap() {
     applyHeader();
     $("#networkStatus").textContent = "Online";
     $("#networkStatus").classList.remove("muted");
-    toast(`Datos cargados desde Sheet PROD · ${APP_VERSION}`);
-    registrarVersionApp();
+    toast(`Datos cargados desde Sheet DEV · ${APP_VERSION}`);
   } catch (err) {
     $("#networkStatus").textContent = "Error API";
-    toast("No se pudo leer el script PROD", "error");
+    toast("No se pudo leer el script DEV", "error");
     console.error(err);
-  }
-}
-
-async function registrarVersionApp() {
-  const key = "d9_admin_version_logged";
-  const lastVersion = localStorage.getItem(key);
-
-  if (lastVersion === APP_VERSION) return;
-
-  try {
-    await apiPost({
-      action: "log_version",
-      version: APP_VERSION,
-      fecha: new Date().toLocaleString("es-AR")
-    });
-    localStorage.setItem(key, APP_VERSION);
-  } catch (err) {
-    console.warn("No se pudo registrar la versión en soporte", err);
   }
 }
 
@@ -136,7 +117,7 @@ async function saveConfig(ev) {
   await apiPost({ action: "update_config", config });
   state.config = config;
   applyHeader();
-  toast("Confi guardada en Sheet PROD");
+  toast("Confi guardada en Sheet DEV");
 }
 
 function parsePrice(value) {
@@ -204,7 +185,7 @@ async function saveImportedProducts() {
   if (!$("#confirmReplaceProducts").checked) return toast("Marcá la confirmación para actualizar productos", "error");
 
   $("#btnSaveProducts").disabled = true;
-  toast("Guardando productos en Sheet PROD…");
+  toast("Guardando productos en Sheet DEV…");
 
   try {
     const result = await apiPost({ action: "update_productos", productos: state.importedProducts });
