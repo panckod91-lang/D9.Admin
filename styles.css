@@ -3194,74 +3194,54 @@ main{
 }
 
 
-/* === D9 Admin v2.0.1 Publicidad overflow mobile fix === */
-html,
-body {
-  width: 100% !important;
-  max-width: 100% !important;
-  overflow-x: hidden !important;
-}
-
-* {
-  box-sizing: border-box !important;
-}
-
-.view,
-.admin-card,
-.admin-page,
-#view-publicidad,
-#view-publicidad * {
-  max-width: 100% !important;
-}
-
-#view-publicidad {
-  overflow-x: hidden !important;
-}
-
-.ad-list-admin-d9 {
-  width: 100% !important;
-  max-width: 100% !important;
-  overflow: hidden !important;
-}
-
-.ad-row-admin-d9 {
-  width: 100% !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
-  overflow: hidden !important;
-}
-
-.ad-row-admin-d9 span {
-  min-width: 0 !important;
-  max-width: 100% !important;
-  overflow: hidden !important;
-}
-
-.ad-row-admin-d9 strong,
-.ad-row-admin-d9 small {
-  max-width: 100% !important;
-  min-width: 0 !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-}
-
-.ad-row-admin-d9 em {
-  max-width: 56px !important;
-  overflow: hidden !important;
-  white-space: nowrap !important;
-}
-
-#view-publicidad .admin-input,
-#view-publicidad input,
-#view-publicidad select,
-#view-publicidad textarea {
-  width: 100% !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
-}
+/* === D9 Admin v2.0.2 Publicidad safe overflow fix === */
+/* No tocar html/body ni scroll general. Solo evitar que URLs largas ensanchen la lista. */
 
 #view-publicidad .admin-card {
+  width: 100% !important;
+  max-width: 100% !important;
   overflow: hidden !important;
+}
+
+#view-publicidad .ad-list-admin-d9 {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+#view-publicidad .ad-row-admin-d9 {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+#view-publicidad .ad-row-admin-d9 > span {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  max-width: calc(100% - 70px) !important;
+  overflow: hidden !important;
+}
+
+#view-publicidad .ad-row-admin-d9 strong,
+#view-publicidad .ad-row-admin-d9 small {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+}
+
+#view-publicidad .ad-row-admin-d9 em {
+  flex: 0 0 auto !important;
+  max-width: 54px !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+}
+
+#view-publicidad .admin-input {
+  max-width: 100% !important;
 }
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = "d9-admin-v201-publicidad-overflow";
+const CACHE_NAME = "d9-admin-v202-publicidad-safe";
 
 self.addEventListener("install", event => {
   self.skipWaiting();
