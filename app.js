@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbyhcs6trzNcrN1M2Uf-8Wl0LYZ1D61o-iKEzeBInWirrAS8NJ0fUX3GCxJ0990E0hNkFQ/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v1.4.0-safe-no-modal";
+const APP_VERSION = "v1.5.0-clientes";
 
 const state = {
   config: {}, soporte: {}, clientes: [], productos: [], usuarios: [], publicidad: [], pedidos: [], importedProducts: []
@@ -36,7 +36,8 @@ function setView(name) {
   if (target) target.classList.add("active");
   window.scrollTo({ top: 0, behavior: "smooth" });
 
-  if (["clientes", "usuarios", "publicidad"].includes(name)) renderSimpleTable(name);
+  if (name === "clientes") renderClientesView();
+  if (["usuarios", "publicidad"].includes(name)) renderSimpleTable(name);
   if (name === "config") renderConfigForm();
 }
 
@@ -309,6 +310,153 @@ function renderOrders() {
   $("#ordersTable").innerHTML = tableHtml(rows.slice(0, 500), ["fecha", "pedido_id", "vendedor", "cliente", "item", "cantidad", "precio", "total_item", "total_pedido"], "Pedidos");
 }
 
+
+function normalizeClientRow(c = {}) {
+  return {
+    id: String(c.id ?? "").trim(),
+    nombre: String(c.nombre ?? "").trim(),
+    telefono: String(c.telefono ?? "").trim(),
+    direccion: String(c.direccion ?? "").trim(),
+    ciudad: String(c.ciudad ?? c.localidad ?? "").trim(),
+    activo: String(c.activo ?? "si").trim() || "si"
+  };
+}
+
+function renderClientesView() {
+  const container = $("#view-clientes");
+  if (!container) return;
+
+  const term = String($("#clientFilter")?.value || "").trim().toLowerCase();
+
+  const rows = (state.clientes || [])
+    .map(normalizeClientRow)
+    .filter(c => {
+      if (!term) return true;
+      return [c.id, c.nombre, c.telefono, c.direccion, c.ciudad, c.activo]
+        .join(" ")
+        .toLowerCase()
+        .includes(term);
+    })
+    .sort((a, b) => String(a.nombre || "").localeCompare(String(b.nombre || ""), "es", { sensitivity: "base", numeric: true }));
+
+  container.innerHTML = `
+    <div class="admin-page-head">
+      <button class="admin-home-btn" data-view="home" type="button">🏠</button>
+      <div>
+        <h2>Clientes</h2>
+        <p>Buscar y editar clientes existentes.</p>
+      </div>
+    </div>
+
+    <div class="admin-card admin-client-tools">
+      <input id="clientFilter" class="admin-input" placeholder="Buscar cliente, teléfono, dirección o ciudad" value="${escapeHtml(term)}" />
+      <p class="admin-note">${rows.length} cliente${rows.length === 1 ? "" : "s"} mostrado${rows.length === 1 ? "" : "s"} · ${state.clientes.length} total</p>
+    </div>
+
+    <div id="clientEditorWrap"></div>
+
+    <div class="admin-card">
+      <strong>Clientes</strong>
+      <div class="client-list-admin-d9">
+        ${rows.length ? rows.slice(0, 500).map(c => `
+          <button class="client-row-admin-d9" type="button" data-client-edit="${escapeHtml(c.id)}">
+            <span>
+              <strong>${escapeHtml(c.nombre || "Sin nombre")}</strong>
+              <small>${escapeHtml([c.telefono, c.direccion, c.ciudad].filter(Boolean).join(" · ") || "Sin datos extra")}</small>
+            </span>
+            <em>${escapeHtml(c.activo || "si")}</em>
+          </button>
+        `).join("") : `<p class="admin-note">No encontré clientes con ese filtro.</p>`}
+      </div>
+    </div>
+  `;
+
+  const filter = $("#clientFilter");
+  if (filter) {
+    filter.oninput = () => renderClientesView();
+    filter.focus();
+    filter.setSelectionRange(filter.value.length, filter.value.length);
+  }
+}
+
+function openClientEditor(id) {
+  const original = (state.clientes || []).find(c => String(c.id) === String(id));
+  if (!original) return toast("No encontré ese cliente", "error");
+
+  const c = normalizeClientRow(original);
+  const wrap = $("#clientEditorWrap");
+  if (!wrap) return;
+
+  wrap.innerHTML = `
+    <form id="clientEditForm" class="admin-card client-editor-admin-d9">
+      <strong>Editar cliente</strong>
+
+      <div class="admin-form-grid">
+        <label class="admin-label">ID
+          <input class="admin-input" data-client-field="id" value="${escapeHtml(c.id)}" readonly />
+        </label>
+
+        <label class="admin-label">Nombre
+          <input class="admin-input" data-client-field="nombre" value="${escapeHtml(c.nombre)}" />
+        </label>
+
+        <label class="admin-label">Teléfono
+          <input class="admin-input" data-client-field="telefono" value="${escapeHtml(c.telefono)}" />
+        </label>
+
+        <label class="admin-label">Dirección
+          <input class="admin-input" data-client-field="direccion" value="${escapeHtml(c.direccion)}" />
+        </label>
+
+        <label class="admin-label">Ciudad / pueblo
+          <input class="admin-input" data-client-field="ciudad" value="${escapeHtml(c.ciudad)}" />
+        </label>
+
+        <label class="admin-label">Activo
+          <select class="admin-input" data-client-field="activo">
+            <option value="si" ${String(c.activo).toLowerCase() !== "no" ? "selected" : ""}>si</option>
+            <option value="no" ${String(c.activo).toLowerCase() === "no" ? "selected" : ""}>no</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="admin-actions sticky-actions">
+        <button class="admin-btn" type="button" id="btnCancelClientEdit">Cancelar</button>
+        <button class="admin-btn primary" type="submit">Guardar cliente</button>
+      </div>
+    </form>
+  `;
+
+  $("#btnCancelClientEdit").onclick = () => {
+    wrap.innerHTML = "";
+  };
+
+  $("#clientEditForm").onsubmit = saveClientEdit;
+  wrap.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function saveClientEdit(ev) {
+  ev.preventDefault();
+
+  const cliente = {};
+  $$("[data-client-field]").forEach(input => {
+    cliente[input.dataset.clientField] = String(input.value || "").trim();
+  });
+
+  if (!cliente.id) return toast("Cliente sin ID", "error");
+  if (!cliente.nombre) return toast("Cargá nombre del cliente", "error");
+
+  try {
+    const result = await apiPost({ action: "update_clientes", clientes: [cliente] });
+    toast(`Cliente guardado · actualizados: ${result.actualizados || 0} · agregados: ${result.agregados || 0}`);
+    await loadBootstrap();
+    renderClientesView();
+  } catch (err) {
+    console.error(err);
+    toast("No se pudo guardar cliente: " + err.message, "error");
+  }
+}
+
 function renderSimpleTable(name) {
   const data = state[name] || [];
   const title = name[0].toUpperCase() + name.slice(1);
@@ -391,6 +539,10 @@ function bindEvents() {
   $("#orderFilterText").oninput = renderOrders;
   $("#orderFilterFrom").onchange = renderOrders;
   $("#orderFilterTo").onchange = renderOrders;
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-client-edit]");
+    if (btn) openClientEditor(btn.dataset.clientEdit);
+  });
 }
 
 console.log("D9 Admin", APP_VERSION, API_BASE);
