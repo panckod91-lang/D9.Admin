@@ -3027,3 +3027,168 @@ main{
 .hidden {
   display: none !important;
 }
+
+
+/* === D9 Admin v2.0 Publicidad === */
+.admin-ad-tools {
+  display: grid !important;
+  gap: 10px !important;
+}
+
+#btnNewAd {
+  width: 100% !important;
+  min-height: 52px !important;
+  border-radius: 18px !important;
+  font-weight: 900 !important;
+}
+
+.ad-list-admin-d9 {
+  display: grid !important;
+  gap: 10px !important;
+  margin-top: 12px !important;
+}
+
+.ad-row-admin-d9 {
+  width: 100% !important;
+  border: 1px solid rgba(23,52,84,.10) !important;
+  background: #f8fbff !important;
+  border-radius: 18px !important;
+  padding: 13px 14px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 12px !important;
+  text-align: left !important;
+  color: #173454 !important;
+  box-shadow: 0 4px 14px rgba(21,91,145,.06) !important;
+}
+
+.ad-row-admin-d9 span {
+  min-width: 0 !important;
+}
+
+.ad-row-admin-d9 strong {
+  display: block !important;
+  font-size: 15px !important;
+  line-height: 1.15 !important;
+  color: #173454 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.ad-row-admin-d9 small {
+  display: block !important;
+  margin-top: 4px !important;
+  color: #6f8294 !important;
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.ad-row-admin-d9 em {
+  flex: 0 0 auto !important;
+  font-style: normal !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  border-radius: 999px !important;
+  padding: 6px 9px !important;
+  background: #eaf7ff !important;
+  color: #176fa8 !important;
+}
+
+.ad-row-admin-d9 em.off {
+  background: #f2f4f7 !important;
+  color: #7b8794 !important;
+}
+
+.ad-editor-admin-d9 {
+  border: 2px solid rgba(36,137,190,.22) !important;
+  box-shadow: 0 14px 35px rgba(21,91,145,.12) !important;
+}
+
+.ad-preview-admin-d9 {
+  margin-top: 16px !important;
+  display: grid !important;
+  gap: 8px !important;
+}
+
+.ad-preview-title-d9 {
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  color: #6f8294 !important;
+}
+
+.ad-preview-full-d9 {
+  width: 100% !important;
+  min-height: 120px !important;
+  border-radius: 22px !important;
+  background: #eef7ff !important;
+  border: 1px dashed rgba(36,137,190,.38) !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #6f8294 !important;
+}
+
+.ad-preview-full-d9 img {
+  width: 100% !important;
+  height: 160px !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+.ad-preview-product-d9 {
+  min-height: 130px !important;
+  border-radius: 22px !important;
+  background: linear-gradient(135deg, #ffffff, #eef8ff) !important;
+  border: 1px solid rgba(36,137,190,.18) !important;
+  padding: 16px !important;
+  display: grid !important;
+  grid-template-columns: 1.2fr .8fr !important;
+  gap: 14px !important;
+  align-items: center !important;
+}
+
+.ad-preview-product-d9 small {
+  display: block !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  color: #2494dc !important;
+  text-transform: uppercase !important;
+  margin-bottom: 5px !important;
+}
+
+.ad-preview-product-d9 strong {
+  display: block !important;
+  font-size: 18px !important;
+  color: #173454 !important;
+  line-height: 1.1 !important;
+}
+
+.ad-preview-product-d9 p {
+  margin: 5px 0 0 !important;
+  color: #6f8294 !important;
+  font-size: 13px !important;
+}
+
+.ad-preview-img-d9 {
+  min-height: 92px !important;
+  border-radius: 18px !important;
+  background: #fff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  color: #9aa8b6 !important;
+}
+
+.ad-preview-img-d9 img {
+  width: 100% !important;
+  height: 120px !important;
+  object-fit: contain !important;
+  display: block !important;
+}

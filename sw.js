@@ -1,4 +1,4 @@
-const CACHE_NAME = "d9-admin-v190-usuario-cliente-nombre";
+const CACHE_NAME = "d9-admin-v200-publicidad";
 
 self.addEventListener("install", event => {
   self.skipWaiting();

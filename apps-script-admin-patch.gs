@@ -177,6 +177,10 @@ function doPost(e) {
       return jsonOut(actualizarUsuarios_(ss, data));
     }
 
+    if (action === "update_publicidad" || action === "upsert_publicidad") {
+      return jsonOut(actualizarPublicidad_(ss, data));
+    }
+
     if (action === "update_productos" || action === "upsert_productos") {
       return jsonOut(actualizarProductos_(ss, data));
     }
@@ -487,6 +491,96 @@ function normalizarUsuarioAdmin_(u) {
     color_1: normalizarColorAdmin_(u.color_1 || ""),
     color_2: normalizarColorAdmin_(u.color_2 || ""),
     activo: normalizarActivoAdmin_(u.activo)
+  };
+}
+
+
+
+// ─── ADMIN PUBLICIDAD ────────────────────────────────────────────────
+
+function actualizarPublicidad_(ss, data) {
+  const sh = ss.getSheetByName("publicidad");
+  if (!sh) return { ok: false, error: "No existe la hoja publicidad" };
+
+  const incoming = Array.isArray(data.publicidad) ? data.publicidad : [];
+  if (!incoming.length) return { ok: false, error: "No llegaron banners para guardar" };
+
+  const requiredHeaders = ["id", "orden", "activo", "modo", "texto", "titulo", "texto_1", "texto_2", "imagen_url", "imagen_url_full", "link_url"];
+  let lastCol = Math.max(sh.getLastColumn(), requiredHeaders.length);
+  let headers = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(normalizarHeader_);
+
+  requiredHeaders.forEach(h => {
+    if (!headers.includes(h)) {
+      lastCol++;
+      sh.getRange(1, lastCol).setValue(h);
+      headers.push(h);
+    }
+  });
+
+  const idCol = headers.indexOf("id") + 1;
+  if (idCol <= 0) return { ok: false, error: "La hoja publicidad no tiene columna id" };
+
+  const lastRow = sh.getLastRow();
+  const rows = lastRow >= 2 ? sh.getRange(2, 1, lastRow - 1, headers.length).getValues() : [];
+
+  const indexPorId = {};
+  rows.forEach((row, i) => {
+    const id = String(row[idCol - 1] || "").trim();
+    if (id) indexPorId[id] = i + 2;
+  });
+
+  let actualizados = 0;
+  let agregados = 0;
+
+  incoming.forEach(raw => {
+    const b = normalizarPublicidadAdmin_(raw);
+    if (!b.id) return;
+
+    const rowValues = new Array(headers.length).fill("");
+
+    if (indexPorId[b.id]) {
+      const current = sh.getRange(indexPorId[b.id], 1, 1, headers.length).getValues()[0];
+      headers.forEach((h, i) => rowValues[i] = current[i]);
+    }
+
+    Object.keys(b).forEach(key => {
+      const idx = headers.indexOf(key);
+      if (idx >= 0) rowValues[idx] = b[key];
+    });
+
+    if (indexPorId[b.id]) {
+      sh.getRange(indexPorId[b.id], 1, 1, headers.length).setValues([rowValues]);
+      actualizados++;
+    } else {
+      sh.appendRow(rowValues);
+      agregados++;
+    }
+  });
+
+  return {
+    ok: true,
+    actualizados,
+    agregados,
+    recibidos: incoming.length,
+    mensaje: "Publicidad actualizada por id."
+  };
+}
+
+function normalizarPublicidadAdmin_(b) {
+  const modo = String(b.modo || "").trim().toLowerCase();
+
+  return {
+    id: String(b.id || b.orden || "").trim(),
+    orden: String(b.orden || b.id || "").trim(),
+    activo: normalizarActivoAdmin_(b.activo),
+    modo: modo || (b.imagen_url_full ? "full" : "producto"),
+    texto: String(b.texto || b.tag || "").trim(),
+    titulo: String(b.titulo || "").trim(),
+    texto_1: String(b.texto_1 || b.texto1 || "").trim(),
+    texto_2: String(b.texto_2 || b.texto2 || "").trim(),
+    imagen_url: String(b.imagen_url || b.imagen || "").trim(),
+    imagen_url_full: String(b.imagen_url_full || b.imagen_full || "").trim(),
+    link_url: String(b.link_url || b.link || "").trim()
   };
 }
 

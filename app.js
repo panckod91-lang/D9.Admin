@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbyhcs6trzNcrN1M2Uf-8Wl0LYZ1D61o-iKEzeBInWirrAS8NJ0fUX3GCxJ0990E0hNkFQ/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v1.9.0-usuario-cliente-nombre";
+const APP_VERSION = "v2.0.0-publicidad";
 
 const state = {
   config: {}, soporte: {}, clientes: [], productos: [], usuarios: [], publicidad: [], pedidos: [], importedProducts: []
@@ -38,7 +38,7 @@ function setView(name) {
 
   if (name === "clientes") renderClientesView();
   if (name === "usuarios") renderUsuariosView();
-  if (["publicidad"].includes(name)) renderSimpleTable(name);
+  if (name === "publicidad") renderPublicidadView();
   if (name === "config") renderConfigForm();
 }
 
@@ -735,6 +735,271 @@ async function saveUserEdit(ev) {
   }
 }
 
+
+function normalizeAdRow(a = {}) {
+  return {
+    id: String(a.id ?? a.orden ?? "").trim(),
+    orden: String(a.orden ?? a.id ?? "").trim(),
+    activo: String(a.activo ?? "si").trim() || "si",
+    modo: String(a.modo ?? a.tipo ?? "").trim(),
+    texto: String(a.texto ?? a.tag ?? "").trim(),
+    titulo: String(a.titulo ?? "").trim(),
+    texto_1: String(a.texto_1 ?? a.texto1 ?? "").trim(),
+    texto_2: String(a.texto_2 ?? a.texto2 ?? "").trim(),
+    imagen_url: String(a.imagen_url ?? a.imagen ?? "").trim(),
+    imagen_url_full: String(a.imagen_url_full ?? a.imagen_full ?? "").trim(),
+    link_url: String(a.link_url ?? a.link ?? "").trim()
+  };
+}
+
+function detectAdModeD9(a) {
+  if (a.modo) return a.modo;
+  if (a.imagen_url_full) return "full";
+  return "producto";
+}
+
+function renderPublicidadView() {
+  const container = $("#view-publicidad");
+  if (!container) return;
+
+  const term = String($("#adFilter")?.value || "").trim().toLowerCase();
+
+  const rows = (state.publicidad || [])
+    .map(normalizeAdRow)
+    .filter(a => {
+      if (!term) return true;
+      return [a.id, a.orden, a.texto, a.titulo, a.texto_1, a.texto_2, a.link_url, a.activo]
+        .join(" ")
+        .toLowerCase()
+        .includes(term);
+    })
+    .sort((a, b) => Number(a.orden || a.id || 0) - Number(b.orden || b.id || 0));
+
+  container.innerHTML = `
+    <div class="admin-page-head">
+      <button class="admin-home-btn" data-view="home" type="button">🏠</button>
+      <div>
+        <h2>Publicidad</h2>
+        <p>Banners y carrusel. Edición simple y controlada.</p>
+      </div>
+    </div>
+
+    <div class="admin-card admin-ad-tools">
+      <input id="adFilter" class="admin-input" placeholder="Buscar banner, título o link" value="${escapeHtml(term)}" />
+      <button id="btnNewAd" class="admin-btn primary" type="button">+ Nuevo banner</button>
+      <p class="admin-note">${rows.length} banner${rows.length === 1 ? "" : "s"} mostrado${rows.length === 1 ? "" : "s"} · ${state.publicidad.length} total</p>
+    </div>
+
+    <div id="adEditorWrap"></div>
+
+    <div class="admin-card">
+      <strong>Banners</strong>
+      <div class="ad-list-admin-d9">
+        ${rows.length ? rows.slice(0, 300).map(a => `
+          <button class="ad-row-admin-d9" type="button" data-ad-edit="${escapeHtml(a.id || a.orden)}">
+            <span>
+              <strong>${escapeHtml(a.titulo || a.texto || "Banner sin título")}</strong>
+              <small>${escapeHtml(`Orden ${a.orden || a.id || "-"} · ${detectAdModeD9(a)} · ${a.link_url || "sin link"}`)}</small>
+            </span>
+            <em class="${String(a.activo).toLowerCase() === "no" ? "off" : ""}">${escapeHtml(a.activo || "si")}</em>
+          </button>
+        `).join("") : `<p class="admin-note">No encontré banners.</p>`}
+      </div>
+    </div>
+  `;
+
+  const newBtn = $("#btnNewAd");
+  if (newBtn) newBtn.onclick = openNewAdEditor;
+
+  const filter = $("#adFilter");
+  if (filter) {
+    filter.oninput = () => renderPublicidadView();
+    filter.focus();
+    filter.setSelectionRange(filter.value.length, filter.value.length);
+  }
+}
+
+function nextAdIdAdminD9() {
+  const nums = (state.publicidad || [])
+    .map(a => Number(String(a.id || a.orden || "").replace(/\D+/g, "")))
+    .filter(n => Number.isFinite(n) && n > 0);
+  return String(nums.length ? Math.max(...nums) + 1 : 1);
+}
+
+function openNewAdEditor() {
+  openAdEditor("", true);
+}
+
+function openAdEditor(id, isNew = false) {
+  const original = isNew ? null : (state.publicidad || []).find(a => String(a.id || a.orden) === String(id));
+  if (!isNew && !original) return toast("No encontré ese banner", "error");
+
+  const a = isNew
+    ? { id: nextAdIdAdminD9(), orden: nextAdIdAdminD9(), activo: "si", modo: "full", texto: "", titulo: "", texto_1: "", texto_2: "", imagen_url: "", imagen_url_full: "", link_url: "" }
+    : normalizeAdRow(original);
+
+  const modo = detectAdModeD9(a);
+  const wrap = $("#adEditorWrap");
+  if (!wrap) return;
+
+  wrap.innerHTML = `
+    <form id="adEditForm" class="admin-card ad-editor-admin-d9">
+      <strong>${isNew ? "Nuevo banner" : "Editar banner"}</strong>
+      <p class="admin-note">Modo full usa imagen horizontal. Modo producto usa título/textos + imagen de producto.</p>
+
+      <div class="admin-form-grid">
+        <label class="admin-label">ID
+          <input class="admin-input" data-ad-field="id" value="${escapeHtml(a.id || a.orden)}" ${isNew ? "" : "readonly"} />
+        </label>
+
+        <label class="admin-label">Orden
+          <input class="admin-input" data-ad-field="orden" value="${escapeHtml(a.orden || a.id)}" />
+        </label>
+
+        <label class="admin-label">Activo
+          <select class="admin-input" data-ad-field="activo">
+            <option value="si" ${String(a.activo).toLowerCase() !== "no" ? "selected" : ""}>si</option>
+            <option value="no" ${String(a.activo).toLowerCase() === "no" ? "selected" : ""}>no</option>
+          </select>
+        </label>
+
+        <label class="admin-label">Tipo
+          <select class="admin-input" data-ad-field="modo" id="adModeSelect">
+            <option value="full" ${modo === "full" ? "selected" : ""}>full · imagen completa</option>
+            <option value="producto" ${modo !== "full" ? "selected" : ""}>producto · texto + imagen</option>
+          </select>
+        </label>
+
+        <label class="admin-label ad-product-field-d9">Etiqueta / tag
+          <input class="admin-input" data-ad-field="texto" value="${escapeHtml(a.texto)}" />
+        </label>
+
+        <label class="admin-label ad-product-field-d9">Título
+          <input class="admin-input" data-ad-field="titulo" value="${escapeHtml(a.titulo)}" />
+        </label>
+
+        <label class="admin-label ad-product-field-d9">Texto 1
+          <input class="admin-input" data-ad-field="texto_1" value="${escapeHtml(a.texto_1)}" />
+        </label>
+
+        <label class="admin-label ad-product-field-d9">Texto 2
+          <input class="admin-input" data-ad-field="texto_2" value="${escapeHtml(a.texto_2)}" />
+        </label>
+
+        <label class="admin-label ad-product-field-d9">Imagen producto URL
+          <input class="admin-input" data-ad-field="imagen_url" value="${escapeHtml(a.imagen_url)}" placeholder="https://..." />
+        </label>
+
+        <label class="admin-label ad-full-field-d9">Imagen full URL
+          <input class="admin-input" data-ad-field="imagen_url_full" value="${escapeHtml(a.imagen_url_full)}" placeholder="https://..." />
+        </label>
+
+        <label class="admin-label">Link URL
+          <input class="admin-input" data-ad-field="link_url" value="${escapeHtml(a.link_url)}" placeholder="https://..." />
+        </label>
+      </div>
+
+      <div id="adPreview" class="ad-preview-admin-d9"></div>
+
+      <div class="admin-actions sticky-actions">
+        <button class="admin-btn" type="button" id="btnCancelAdEdit">Cancelar</button>
+        <button class="admin-btn primary" type="submit">${isNew ? "Crear banner" : "Guardar banner"}</button>
+      </div>
+    </form>
+  `;
+
+  $("#btnCancelAdEdit").onclick = () => { wrap.innerHTML = ""; };
+
+  const mode = $("#adModeSelect");
+  if (mode) mode.onchange = () => {
+    updateAdModeFieldsD9();
+    updateAdPreviewD9();
+  };
+
+  $$("[data-ad-field]").forEach(input => {
+    input.addEventListener("input", updateAdPreviewD9);
+    input.addEventListener("change", updateAdPreviewD9);
+  });
+
+  $("#adEditForm").onsubmit = saveAdEdit;
+  updateAdModeFieldsD9();
+  updateAdPreviewD9();
+  wrap.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function updateAdModeFieldsD9() {
+  const mode = $("#adModeSelect")?.value || "full";
+  $$(".ad-full-field-d9").forEach(el => el.classList.toggle("hidden", mode !== "full"));
+  $$(".ad-product-field-d9").forEach(el => el.classList.toggle("hidden", mode === "full"));
+}
+
+function collectAdFormD9() {
+  const ad = {};
+  $$("[data-ad-field]").forEach(input => {
+    ad[input.dataset.adField] = String(input.value || "").trim();
+  });
+  return ad;
+}
+
+function updateAdPreviewD9() {
+  const box = $("#adPreview");
+  if (!box) return;
+
+  const a = collectAdFormD9();
+  const mode = a.modo || "full";
+
+  if (mode === "full") {
+    box.innerHTML = `
+      <div class="ad-preview-title-d9">Vista previa full</div>
+      <div class="ad-preview-full-d9">
+        ${a.imagen_url_full ? `<img src="${escapeHtml(a.imagen_url_full)}" alt="">` : `<span>Pegá una imagen horizontal en Imagen full URL</span>`}
+      </div>
+    `;
+    return;
+  }
+
+  box.innerHTML = `
+    <div class="ad-preview-title-d9">Vista previa producto</div>
+    <div class="ad-preview-product-d9">
+      <div>
+        ${a.texto ? `<small>${escapeHtml(a.texto)}</small>` : ""}
+        <strong>${escapeHtml(a.titulo || "Título del banner")}</strong>
+        ${a.texto_1 ? `<p>${escapeHtml(a.texto_1)}</p>` : ""}
+        ${a.texto_2 ? `<p>${escapeHtml(a.texto_2)}</p>` : ""}
+      </div>
+      <div class="ad-preview-img-d9">
+        ${a.imagen_url ? `<img src="${escapeHtml(a.imagen_url)}" alt="">` : `<span>Imagen</span>`}
+      </div>
+    </div>
+  `;
+}
+
+async function saveAdEdit(ev) {
+  ev.preventDefault();
+  const publicidad = collectAdFormD9();
+
+  if (!publicidad.id) return toast("Banner sin ID", "error");
+  if (!publicidad.orden) publicidad.orden = publicidad.id;
+
+  if (publicidad.modo === "full" && !publicidad.imagen_url_full) {
+    return toast("Cargá Imagen full URL", "error");
+  }
+
+  if (publicidad.modo !== "full" && !publicidad.titulo && !publicidad.imagen_url) {
+    return toast("Cargá al menos título o imagen producto", "error");
+  }
+
+  try {
+    const result = await apiPost({ action: "update_publicidad", publicidad: [publicidad] });
+    toast(`Banner guardado · actualizados: ${result.actualizados || 0} · nuevos: ${result.agregados || 0}`);
+    await loadBootstrap();
+    renderPublicidadView();
+  } catch (err) {
+    console.error(err);
+    toast("No se pudo guardar banner: " + err.message, "error");
+  }
+}
+
 function renderSimpleTable(name) {
   const data = state[name] || [];
   const title = name[0].toUpperCase() + name.slice(1);
@@ -823,6 +1088,9 @@ function bindEvents() {
 
     const userBtn = e.target.closest("[data-user-edit]");
     if (userBtn) openUserEditor(userBtn.dataset.userEdit);
+
+    const adBtn = e.target.closest("[data-ad-edit]");
+    if (adBtn) openAdEditor(adBtn.dataset.adEdit);
   });
 }
 
