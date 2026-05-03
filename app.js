@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbyhcs6trzNcrN1M2Uf-8Wl0LYZ1D61o-iKEzeBInWirrAS8NJ0fUX3GCxJ0990E0hNkFQ/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v1.5.0-clientes";
+const APP_VERSION = "v1.6.0-clientes-nuevo";
 
 const state = {
   config: {}, soporte: {}, clientes: [], productos: [], usuarios: [], publicidad: [], pedidos: [], importedProducts: []
@@ -349,7 +349,8 @@ function renderClientesView() {
     </div>
 
     <div class="admin-card admin-client-tools">
-      <input id="clientFilter" class="admin-input" placeholder="Buscar cliente, teléfono, dirección o ciudad" value="${escapeHtml(term)}" />
+      <input id="clientFilter" class="admin-input" placeholder="Buscar cliente, teléfono o dirección" value="${escapeHtml(term)}" />
+      <button id="btnNewClient" class="admin-btn primary" type="button">+ Nuevo cliente</button>
       <p class="admin-note">${rows.length} cliente${rows.length === 1 ? "" : "s"} mostrado${rows.length === 1 ? "" : "s"} · ${state.clientes.length} total</p>
     </div>
 
@@ -371,6 +372,9 @@ function renderClientesView() {
     </div>
   `;
 
+  const newBtn = $("#btnNewClient");
+  if (newBtn) newBtn.onclick = openNewClientEditor;
+
   const filter = $("#clientFilter");
   if (filter) {
     filter.oninput = () => renderClientesView();
@@ -379,21 +383,38 @@ function renderClientesView() {
   }
 }
 
-function openClientEditor(id) {
-  const original = (state.clientes || []).find(c => String(c.id) === String(id));
-  if (!original) return toast("No encontré ese cliente", "error");
+function nextClientIdAdminD9() {
+  const nums = (state.clientes || [])
+    .map(c => Number(String(c.id || "").replace(/\D+/g, "")))
+    .filter(n => Number.isFinite(n) && n > 0);
 
-  const c = normalizeClientRow(original);
+  const next = nums.length ? Math.max(...nums) + 1 : 1;
+  return String(next);
+}
+
+function openNewClientEditor() {
+  openClientEditor("", true);
+}
+
+function openClientEditor(id, isNew = false) {
+  const original = isNew ? null : (state.clientes || []).find(c => String(c.id) === String(id));
+  if (!isNew && !original) return toast("No encontré ese cliente", "error");
+
+  const c = isNew
+    ? { id: nextClientIdAdminD9(), nombre: "", telefono: "", direccion: "", ciudad: "", activo: "si" }
+    : normalizeClientRow(original);
+
   const wrap = $("#clientEditorWrap");
   if (!wrap) return;
 
   wrap.innerHTML = `
     <form id="clientEditForm" class="admin-card client-editor-admin-d9">
-      <strong>Editar cliente</strong>
+      <strong>${isNew ? "Nuevo cliente" : "Editar cliente"}</strong>
+      <p class="admin-note">${isNew ? "Se agregará como una fila nueva en clientes." : "Se actualizará el cliente existente por ID."}</p>
 
       <div class="admin-form-grid">
         <label class="admin-label">ID
-          <input class="admin-input" data-client-field="id" value="${escapeHtml(c.id)}" readonly />
+          <input class="admin-input" data-client-field="id" value="${escapeHtml(c.id)}" ${isNew ? "" : "readonly"} />
         </label>
 
         <label class="admin-label">Nombre
@@ -408,10 +429,6 @@ function openClientEditor(id) {
           <input class="admin-input" data-client-field="direccion" value="${escapeHtml(c.direccion)}" />
         </label>
 
-        <label class="admin-label">Ciudad / pueblo
-          <input class="admin-input" data-client-field="ciudad" value="${escapeHtml(c.ciudad)}" />
-        </label>
-
         <label class="admin-label">Activo
           <select class="admin-input" data-client-field="activo">
             <option value="si" ${String(c.activo).toLowerCase() !== "no" ? "selected" : ""}>si</option>
@@ -422,7 +439,7 @@ function openClientEditor(id) {
 
       <div class="admin-actions sticky-actions">
         <button class="admin-btn" type="button" id="btnCancelClientEdit">Cancelar</button>
-        <button class="admin-btn primary" type="submit">Guardar cliente</button>
+        <button class="admin-btn primary" type="submit">${isNew ? "Crear cliente" : "Guardar cliente"}</button>
       </div>
     </form>
   `;
@@ -448,7 +465,7 @@ async function saveClientEdit(ev) {
 
   try {
     const result = await apiPost({ action: "update_clientes", clientes: [cliente] });
-    toast(`Cliente guardado · actualizados: ${result.actualizados || 0} · agregados: ${result.agregados || 0}`);
+    toast(`Cliente guardado · actualizados: ${result.actualizados || 0} · nuevos: ${result.agregados || 0}`);
     await loadBootstrap();
     renderClientesView();
   } catch (err) {

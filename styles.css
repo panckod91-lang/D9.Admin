@@ -2918,3 +2918,12 @@ main{
     grid-template-columns: 1fr 1fr !important;
   }
 }
+
+
+/* === D9 Admin v1.6 Crear cliente === */
+#btnNewClient {
+  width: 100% !important;
+  min-height: 52px !important;
+  border-radius: 18px !important;
+  font-weight: 900 !important;
+}
