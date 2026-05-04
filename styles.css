@@ -3247,17 +3247,38 @@ main{
 
 
 
-
-/* FIX overflow clientes */
-.cliente-card, .client-card, .card-cliente {
-  overflow: hidden;
+/* === v2.0.4 fix clientes overflow === */
+.client-list-admin-d9,
+.client-list-admin-d9 *,
+.client-row-admin-d9,
+.client-row-admin-d9 * {
+  box-sizing: border-box !important;
 }
 
-.cliente-info, .client-info, .card-cliente-info {
-  flex: 1;
-  min-width: 0;
+.client-list-admin-d9 {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
 }
 
-.cliente-badge, .badge, .estado-badge {
-  flex-shrink: 0;
+.client-row-admin-d9 {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.client-row-admin-d9 > span {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  max-width: calc(100% - 62px) !important;
+  overflow: hidden !important;
+}
+
+.client-row-admin-d9 > em {
+  flex: 0 0 auto !important;
+  max-width: 54px !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
 }
