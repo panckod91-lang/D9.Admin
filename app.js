@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.0.4 (fix clientes overflow)";
+const APP_VERSION = "v2.0.5 (pedidos visual)";
 
 const state = {
   config: {}, soporte: {}, clientes: [], productos: [], usuarios: [], publicidad: [], pedidos: [], importedProducts: []
@@ -278,6 +278,88 @@ function normalizeSearch(s) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+function getUserColorForOrderD9(order, orderIndexBySeller) {
+  const sellerId = String(order.vendedor_id || "").trim();
+  const sellerName = String(order.vendedor || "").trim().toLowerCase();
+
+  const user = (state.usuarios || []).find(u => {
+    const uid = String(u.id || "").trim();
+    const uname = String(u.nombre || "").trim().toLowerCase();
+    return (sellerId && uid && uid === sellerId) || (sellerName && uname && uname === sellerName);
+  });
+
+  const c1 = user?.color_1 && /^#[0-9A-Fa-f]{6}$/.test(String(user.color_1)) ? String(user.color_1) : "#F4FAFF";
+  const c2 = user?.color_2 && /^#[0-9A-Fa-f]{6}$/.test(String(user.color_2)) ? String(user.color_2) : "#FFFFFF";
+
+  const key = sellerId || sellerName || "_general";
+  const n = orderIndexBySeller.get(key) || 0;
+  orderIndexBySeller.set(key, n + 1);
+
+  return n % 2 === 0 ? c1 : c2;
+}
+
+function renderOrdersVisualD9(rows) {
+  if (!rows.length) {
+    return `<div class="admin-card"><strong>Pedidos</strong><p class="admin-note">Sin pedidos para mostrar.</p></div>`;
+  }
+
+  const groups = [];
+  const map = new Map();
+
+  rows.forEach(row => {
+    const id = String(row.pedido_id || "").trim() || `sin_id_${groups.length}`;
+    if (!map.has(id)) {
+      const group = { id, rows: [] };
+      map.set(id, group);
+      groups.push(group);
+    }
+    map.get(id).rows.push(row);
+  });
+
+  const orderIndexBySeller = new Map();
+
+  return `
+    <div class="admin-card">
+      <strong>Pedidos</strong>
+      <div class="orders-visual-list-d9">
+        ${groups.slice(0, 300).map(group => {
+          const first = group.rows[0] || {};
+          const color = getUserColorForOrderD9(first, orderIndexBySeller);
+          const total = group.rows.reduce((s, r) => s + Number(r.total_item || 0), 0);
+          const items = group.rows.length;
+
+          return `
+            <div class="order-block-admin-d9" style="--order-bg:${escapeHtml(color)}">
+              <div class="order-block-head-d9">
+                <div>
+                  <strong>${escapeHtml(first.cliente || "Sin cliente")}</strong>
+                  <small>${escapeHtml(first.fecha || "")} · ${escapeHtml(first.vendedor || "Sin vendedor")}</small>
+                </div>
+                <div class="order-block-meta-d9">
+                  <span>${escapeHtml(group.id)}</span>
+                  <b>${money(total)}</b>
+                </div>
+              </div>
+
+              <div class="order-block-lines-d9">
+                ${group.rows.map(r => `
+                  <div class="order-line-admin-d9">
+                    <span>${escapeHtml(r.item || "")}</span>
+                    <em>${Number(r.cantidad || 0)}</em>
+                    <strong>${money(r.total_item || 0)}</strong>
+                  </div>
+                `).join("")}
+              </div>
+
+              <div class="order-block-foot-d9">${items} línea${items === 1 ? "" : "s"}</div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    </div>
+  `;
+}
+
 function renderOrders() {
   const qRaw = $("#orderFilterText")?.value || "";
   const terms = normalizeSearch(qRaw).split(/\s+/).filter(Boolean);
@@ -307,8 +389,12 @@ function renderOrders() {
   });
 
   const total = rows.reduce((s, r) => s + Number(r.total_item || 0), 0);
-  $("#ordersSummary").textContent = `${rows.length} líneas · total filtrado: ${money(total)} · cargados: ${(state.pedidos || []).length}`;
-  $("#ordersTable").innerHTML = tableHtml(rows.slice(0, 500), ["fecha", "pedido_id", "vendedor", "cliente", "item", "cantidad", "precio", "total_item", "total_pedido"], "Pedidos");
+  const pedidosUnicos = new Set(rows.map(r => String(r.pedido_id || "").trim()).filter(Boolean));
+  const totalPedidos = pedidosUnicos.size;
+  const pedidosCargados = new Set((state.pedidos || []).map(r => String(r.pedido_id || "").trim()).filter(Boolean)).size;
+
+  $("#ordersSummary").textContent = `${totalPedidos} pedido${totalPedidos === 1 ? "" : "s"} · ${rows.length} línea${rows.length === 1 ? "" : "s"} · total filtrado: ${money(total)} · cargados: ${pedidosCargados} pedidos / ${(state.pedidos || []).length} líneas`;
+  $("#ordersTable").innerHTML = renderOrdersVisualD9(rows);
 }
 
 
