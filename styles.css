@@ -3245,3 +3245,19 @@ main{
   max-width: 100% !important;
 }
 
+
+
+
+/* FIX overflow clientes */
+.cliente-card, .client-card, .card-cliente {
+  overflow: hidden;
+}
+
+.cliente-info, .client-info, .card-cliente-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cliente-badge, .badge, .estado-badge {
+  flex-shrink: 0;
+}
