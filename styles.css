@@ -3557,3 +3557,25 @@ main{
 .order-detail-line-d9 small{
   color:#6f8294 !important;
 }
+
+
+/* === v2.0.7 home button destacado === */
+.admin-home-btn{
+  width:44px !important;
+  height:44px !important;
+  min-width:44px !important;
+  border-radius:16px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  background:#fff !important;
+  border:2px solid #ef3340 !important;
+  color:#173454 !important;
+  font-size:20px !important;
+  font-weight:950 !important;
+  box-shadow:0 6px 16px rgba(239,51,64,.16), 0 4px 12px rgba(21,91,145,.08) !important;
+}
+
+.admin-home-btn:active{
+  transform:scale(.96) !important;
+}

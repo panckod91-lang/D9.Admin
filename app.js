@@ -1,6 +1,8 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.0.6 (pedidos compacto)";
+const APP_VERSION = "v2.0.7 (home back iva)";
+const IVA_RATE_D9 = 0.21;
+const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
 const state = {
   config: {}, soporte: {}, clientes: [], productos: [], usuarios: [], publicidad: [], pedidos: [], importedProducts: []
@@ -30,7 +32,7 @@ function getConfigText(key, sub = "tex1") {
   return v[sub] ?? "";
 }
 
-function setView(name) {
+function setView(name, pushHistory = true) {
   $$(".view").forEach(v => v.classList.remove("active"));
   const target = $(`#view-${name}`);
   if (target) target.classList.add("active");
@@ -40,6 +42,10 @@ function setView(name) {
   if (name === "usuarios") renderUsuariosView();
   if (name === "publicidad") renderPublicidadView();
   if (name === "config") renderConfigForm();
+
+  if (pushHistory && name !== "home" && window.history && window.history.pushState) {
+    history.pushState({ view: name }, "", location.href);
+  }
 }
 
 async function loadBootstrap() {
@@ -144,7 +150,8 @@ function parseXlsRows(rows) {
   if ([iCodigo, iRubro, iDesc, iLista1].some(i => i === undefined)) throw new Error("No encontré columnas Codigo, Rubro, Descripcion y Lista1");
 
   return rows.slice(1).map(r => {
-    const precio = parsePrice(r[iLista1]);
+    const precioBase = parsePrice(r[iLista1]);
+    const precio = XLS_PRICE_INCLUDES_IVA_D9 ? precioBase : Math.round((precioBase * (1 + IVA_RATE_D9)) * 100) / 100;
     return {
       id: String(r[iCodigo] ?? "").trim(),
       nombre: String(r[iDesc] ?? "").trim(),
@@ -166,7 +173,7 @@ async function parseXlsFile() {
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
     state.importedProducts = parseXlsRows(rows);
-    $("#xlsSummary").textContent = `Archivo: ${file.name} · productos válidos: ${state.importedProducts.length}`;
+    $("#xlsSummary").textContent = `Archivo: ${file.name} · productos válidos: ${state.importedProducts.length} · IVA 21% aplicado`;
     $("#btnSaveProducts").disabled = !state.importedProducts.length;
     renderProductsPreview();
   } catch (err) {
@@ -177,7 +184,7 @@ async function parseXlsFile() {
 
 function renderProductsPreview() {
   const sample = state.importedProducts.slice(0, 80);
-  $("#productsPreview").innerHTML = tableHtml(sample, ["id", "nombre", "categoria", "lista_1", "lista_2", "lista_3", "activo"], "Vista previa: primeras 80 filas");
+  $("#productsPreview").innerHTML = tableHtml(sample, ["id", "nombre", "categoria", "lista_1", "lista_2", "lista_3", "activo"], "Vista previa con IVA 21% incluido: primeras 80 filas");
 }
 
 async function saveImportedProducts() {
@@ -185,7 +192,7 @@ async function saveImportedProducts() {
   if (!$("#confirmReplaceProducts").checked) return toast("Marcá la confirmación para actualizar productos", "error");
 
   $("#btnSaveProducts").disabled = true;
-  toast("Guardando productos en Sheet DEV…");
+  toast("Guardando productos con IVA 21% incluido…");
 
   try {
     const result = await apiPost({ action: "update_productos", productos: state.importedProducts });
@@ -1159,6 +1166,24 @@ function openCompanyModal() {
   return;
 }
 
+
+function setupBackToHomeD9() {
+  if (!window.history || !window.history.pushState || window.__d9AdminBackBound) return;
+  window.__d9AdminBackBound = true;
+
+  history.replaceState({ view: "home" }, "", location.href);
+
+  window.addEventListener("popstate", () => {
+    const active = document.querySelector(".view.active");
+    const current = active?.id?.replace("view-", "") || "home";
+
+    if (current && current !== "home") {
+      setView("home", false);
+      history.replaceState({ view: "home" }, "", location.href);
+    }
+  });
+}
+
 function bindEvents() {
   document.addEventListener("click", (e) => {
     const viewBtn = e.target.closest("[data-view]");
@@ -1186,6 +1211,7 @@ function bindEvents() {
 }
 
 console.log("D9 Admin", APP_VERSION, API_BASE);
+setupBackToHomeD9();
 bindEvents();
 loadBootstrap();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
