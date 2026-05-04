@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.0.7 (home back iva)";
+const APP_VERSION = "v2.0.8 (admin auto refresh)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -1212,6 +1212,26 @@ function bindEvents() {
 
 console.log("D9 Admin", APP_VERSION, API_BASE);
 setupBackToHomeD9();
+
+const AUTO_REFRESH_MS_D9 = 10 * 60 * 1000;
+
+function autoRefreshD9(){
+  const activeInput = document.querySelector("input:focus, textarea:focus");
+  if(activeInput) return;
+
+  if(document.hidden) return;
+
+  loadBootstrap();
+}
+
+setInterval(autoRefreshD9, AUTO_REFRESH_MS_D9);
+
+document.addEventListener("visibilitychange", () => {
+  if(!document.hidden){
+    autoRefreshD9();
+  }
+});
+
 bindEvents();
 loadBootstrap();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
