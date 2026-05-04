@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.0.8 (admin auto refresh)";
+const APP_VERSION = "v2.0.9 (status refresh)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -12,6 +12,56 @@ const $ = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
 const money = (v) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(v) || 0);
 const priceAR = (v) => new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(v) || 0);
+
+let lastRefreshAtD9 = 0;
+
+function formatRefreshAgeD9() {
+  if (!lastRefreshAtD9) return "Sin actualizar";
+  const diff = Math.max(0, Date.now() - lastRefreshAtD9);
+  const sec = Math.floor(diff / 1000);
+  const min = Math.floor(sec / 60);
+
+  if (sec < 20) return "Actualizado ahora";
+  if (sec < 60) return `Hace ${sec}s`;
+  if (min < 60) return `Hace ${min} min`;
+
+  const h = Math.floor(min / 60);
+  return `Hace ${h} h`;
+}
+
+function updateRefreshBadgeD9() {
+  const badge = $("#adminBadge .seller-name");
+  if (badge) badge.textContent = formatRefreshAgeD9();
+}
+
+function setSyncBusyD9(busy) {
+  const btn = $("#btnReload");
+  if (!btn) return;
+  btn.classList.toggle("is-syncing-d9", !!busy);
+  btn.textContent = busy ? "↻ Sync…" : "↻ Sync";
+}
+
+function setNetworkStatusD9(status) {
+  const el = $("#networkStatus");
+  if (!el) return;
+  el.classList.remove("online", "offline", "muted", "error");
+  if (status === "online") {
+    el.textContent = "Online";
+    el.classList.add("online");
+  } else if (status === "offline") {
+    el.textContent = "Offline";
+    el.classList.add("offline");
+  } else if (status === "syncing") {
+    el.textContent = "Sync…";
+    el.classList.add("muted");
+  } else {
+    el.textContent = "Error";
+    el.classList.add("error");
+  }
+}
+
+setInterval(updateRefreshBadgeD9, 30000);
+
 
 function toast(msg, type = "ok") {
   const el = $("#toast");
@@ -49,7 +99,8 @@ function setView(name, pushHistory = true) {
 }
 
 async function loadBootstrap() {
-  $("#networkStatus").textContent = "Sincronizando…";
+  setSyncBusyD9(true);
+  setNetworkStatusD9("syncing");
   try {
     const r = await fetch(BOOTSTRAP_URL, { cache: "no-store" });
     const data = await r.json();
@@ -58,13 +109,16 @@ async function loadBootstrap() {
       config: data.config || {}, soporte: data.soporte || {}, clientes: data.clientes || [], productos: data.productos || [], usuarios: data.usuarios || [], publicidad: data.publicidad || []
     });
     applyHeader();
-    $("#networkStatus").textContent = "Online";
-    $("#networkStatus").classList.remove("muted");
-    toast(`Datos cargados desde Sheet DEV · ${APP_VERSION}`);
+    lastRefreshAtD9 = Date.now();
+    setNetworkStatusD9("online");
+    updateRefreshBadgeD9();
+    toast(`Datos actualizados · ${APP_VERSION}`);
   } catch (err) {
-    $("#networkStatus").textContent = "Error API";
-    toast("No se pudo leer el script DEV", "error");
+    setNetworkStatusD9("error");
+    toast("No se pudo actualizar datos", "error");
     console.error(err);
+  } finally {
+    setSyncBusyD9(false);
   }
 }
 

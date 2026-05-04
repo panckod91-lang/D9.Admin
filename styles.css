@@ -3579,3 +3579,65 @@ main{
 .admin-home-btn:active{
   transform:scale(.96) !important;
 }
+
+
+/* === v2.0.9 estados admin refresh === */
+#networkStatus.online::before,
+#networkStatus.offline::before,
+#networkStatus.error::before,
+#adminBadge::before,
+#btnReload::before{
+  content:"";
+  width:13px !important;
+  height:13px !important;
+  min-width:13px !important;
+  border-radius:999px !important;
+  display:inline-block !important;
+  margin-right:8px !important;
+  background:#c9d6e3 !important;
+  box-shadow:0 0 0 7px rgba(201,214,227,.28) !important;
+}
+
+#networkStatus.online::before{
+  background:#26c281 !important;
+  box-shadow:0 0 0 7px rgba(38,194,129,.18) !important;
+}
+
+#networkStatus.offline::before{
+  background:#9aa8b6 !important;
+  box-shadow:0 0 0 7px rgba(154,168,182,.20) !important;
+}
+
+#networkStatus.error::before{
+  background:#ef3340 !important;
+  box-shadow:0 0 0 7px rgba(239,51,64,.16) !important;
+}
+
+#adminBadge::before{
+  background:#f7b731 !important;
+  box-shadow:0 0 0 7px rgba(247,183,49,.16) !important;
+}
+
+#btnReload{
+  color:#173454 !important;
+  border:0 !important;
+}
+
+#btnReload::before{
+  background:#3a86ff !important;
+  box-shadow:0 0 0 7px rgba(58,134,255,.16) !important;
+}
+
+#btnReload.is-syncing-d9::before{
+  animation:d9SyncPulse 850ms linear infinite !important;
+}
+
+@keyframes d9SyncPulse{
+  0%{ transform:scale(.9); opacity:.65; }
+  50%{ transform:scale(1.12); opacity:1; }
+  100%{ transform:scale(.9); opacity:.65; }
+}
+
+#adminBadge .seller-name{
+  white-space:nowrap !important;
+}
