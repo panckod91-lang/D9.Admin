@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.0.5 (pedidos visual)";
+const APP_VERSION = "v2.0.6 (pedidos compacto)";
 
 const state = {
   config: {}, soporte: {}, clientes: [], productos: [], usuarios: [], publicidad: [], pedidos: [], importedProducts: []
@@ -243,10 +243,10 @@ function normalizeOrderRow(o) {
     vendedor: o.vendedor || "",
     cliente: o.cliente || "",
     item: o.item || o.detalle || o.producto || o.nombre || "",
-    cantidad: Number(o.cantidad ?? o.total ?? 0) || 0,
-    precio: Number(o.precio || 0) || 0,
-    total_item: Number(o.total_item ?? o.totalitem ?? 0) || 0,
-    total_pedido: Number(o.total_pedido ?? o.totalpedido ?? 0) || 0,
+    cantidad: parsePrice(o.cantidad ?? o.total ?? 0) || 0,
+    precio: parsePrice(o.precio || 0) || 0,
+    total_item: parsePrice(o.total_item ?? o.totalitem ?? 0) || 0,
+    total_pedido: parsePrice(o.total_pedido ?? o.totalpedido ?? 0) || 0,
     _raw: o
   };
 }
@@ -321,38 +321,44 @@ function renderOrdersVisualD9(rows) {
   return `
     <div class="admin-card">
       <strong>Pedidos</strong>
-      <div class="orders-visual-list-d9">
-        ${groups.slice(0, 300).map(group => {
+      <div class="orders-compact-list-d9">
+        ${groups.slice(0, 500).map(group => {
           const first = group.rows[0] || {};
           const color = getUserColorForOrderD9(first, orderIndexBySeller);
           const total = group.rows.reduce((s, r) => s + Number(r.total_item || 0), 0);
-          const items = group.rows.length;
+          const cantidadItems = group.rows.reduce((s, r) => s + Number(r.cantidad || 0), 0);
+          const lines = group.rows.length;
+          const detailId = `order_detail_${escapeHtml(group.id).replace(/[^a-zA-Z0-9_-]/g, "_")}`;
 
           return `
-            <div class="order-block-admin-d9" style="--order-bg:${escapeHtml(color)}">
-              <div class="order-block-head-d9">
-                <div>
+            <details class="order-compact-admin-d9" style="--order-bg:${escapeHtml(color)}">
+              <summary class="order-summary-admin-d9">
+                <div class="order-summary-main-d9">
                   <strong>${escapeHtml(first.cliente || "Sin cliente")}</strong>
                   <small>${escapeHtml(first.fecha || "")} · ${escapeHtml(first.vendedor || "Sin vendedor")}</small>
                 </div>
-                <div class="order-block-meta-d9">
+                <div class="order-summary-side-d9">
                   <span>${escapeHtml(group.id)}</span>
                   <b>${money(total)}</b>
                 </div>
-              </div>
+                <div class="order-summary-arrow-d9">⌄</div>
+              </summary>
 
-              <div class="order-block-lines-d9">
+              <div class="order-detail-admin-d9" id="${detailId}">
+                <div class="order-detail-meta-d9">
+                  ${lines} línea${lines === 1 ? "" : "s"} · ${cantidadItems} unidad${cantidadItems === 1 ? "" : "es"}
+                </div>
+
                 ${group.rows.map(r => `
-                  <div class="order-line-admin-d9">
+                  <div class="order-detail-line-d9">
                     <span>${escapeHtml(r.item || "")}</span>
                     <em>${Number(r.cantidad || 0)}</em>
+                    <small>${money(r.precio || 0)}</small>
                     <strong>${money(r.total_item || 0)}</strong>
                   </div>
                 `).join("")}
               </div>
-
-              <div class="order-block-foot-d9">${items} línea${items === 1 ? "" : "s"}</div>
-            </div>
+            </details>
           `;
         }).join("")}
       </div>
@@ -396,7 +402,6 @@ function renderOrders() {
   $("#ordersSummary").textContent = `${totalPedidos} pedido${totalPedidos === 1 ? "" : "s"} · ${rows.length} línea${rows.length === 1 ? "" : "s"} · total filtrado: ${money(total)} · cargados: ${pedidosCargados} pedidos / ${(state.pedidos || []).length} líneas`;
   $("#ordersTable").innerHTML = renderOrdersVisualD9(rows);
 }
-
 
 function normalizeClientRow(c = {}) {
   return {
