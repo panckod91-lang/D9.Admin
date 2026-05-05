@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.1.1 (version alert)";
+const APP_VERSION = "v2.1.2 (sync toast)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -14,6 +14,7 @@ const money = (v) => new Intl.NumberFormat("es-AR", { style: "currency", currenc
 const priceAR = (v) => new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(v) || 0);
 
 let lastRefreshAtD9 = 0;
+let isManualSyncD9 = false;
 
 function formatRefreshAgeD9() {
   if (!lastRefreshAtD9) return "Sin actualizar";
@@ -130,6 +131,10 @@ async function loadBootstrap() {
       setVersionUpdateAvailableD9(true);
     } else {
       setVersionUpdateAvailableD9(false);
+    if (isManualSyncD9) {
+      toast("Datos actualizados con Sheet", "ok");
+      isManualSyncD9 = false;
+    }
     }
 
     toast(`Datos actualizados · ${APP_VERSION}`);
@@ -145,6 +150,7 @@ async function loadBootstrap() {
 
     setNetworkStatusD9("error");
     toast("No se pudo actualizar datos", "error");
+    isManualSyncD9 = false;
     console.error(err);
   } finally {
     setSyncBusyD9(false);
@@ -1272,7 +1278,7 @@ function bindEvents() {
     const viewBtn = e.target.closest("[data-view]");
     if (viewBtn) setView(viewBtn.dataset.view);
   });
-  $("#btnReload").onclick = loadBootstrap;
+  $("#btnReload").onclick = () => { isManualSyncD9 = true; loadBootstrap(); };
   $("#btnCompanyInfo").onclick = openCompanyModal;
   $("#closeCompanyModal").onclick = () => $("#companyModal").classList.add("hidden");
   $("#btnParseXls").onclick = parseXlsFile;
