@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.1.4 (toast version clean)";
+const APP_VERSION = "v2.1.5 (safe toast)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -36,14 +36,14 @@ function updateRefreshBadgeD9() {
 }
 
 
-function setVersionUpdateAvailableD9(flag){
+function setVersionUpdateAvailableD9(flag) {
   const badge = document.querySelector("#adminBadge");
   const el = document.querySelector("#adminBadge .seller-name");
-  if(!badge || !el) return;
+  if (!badge || !el) return;
 
   badge.classList.toggle("version-alert-d9", !!flag);
 
-  if(flag){
+  if (flag) {
     el.innerHTML = '⚠️ Nueva versión · <span class="reload-link-d9">Actualizar</span>';
   } else {
     badge.classList.remove("version-alert-d9");
@@ -51,8 +51,8 @@ function setVersionUpdateAvailableD9(flag){
   }
 }
 
-document.addEventListener("click", (e)=>{
-  if(e.target.classList.contains("reload-link-d9")){
+document.addEventListener("click", (e) => {
+  if (e.target.classList.contains("reload-link-d9")) {
     window.location.reload();
   }
 });
@@ -158,9 +158,7 @@ async function loadBootstrap(showToast = true) {
     setNetworkStatusD9("online");
 
     const versionSheet = String(state.soporte?.version || "").trim();
-    const hayVersionNueva = Boolean(versionSheet && versionSheet !== APP_VERSION);
-
-    if (hayVersionNueva) {
+    if (versionSheet && versionSheet !== APP_VERSION) {
       setVersionUpdateAvailableD9(true);
     } else {
       setVersionUpdateAvailableD9(false);
@@ -170,7 +168,6 @@ async function loadBootstrap(showToast = true) {
     if (showToast) {
       toast(`Datos actualizados con Sheet · ${APP_VERSION}`, "ok");
     }
-
   } catch (err) {
     setUpdatingStateD9(false);
     setNetworkStatusD9("error");
