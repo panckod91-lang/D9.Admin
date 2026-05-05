@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.1.0 (status pro)";
+const APP_VERSION = "v2.1.1 (version alert)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -124,9 +124,25 @@ async function loadBootstrap() {
     lastRefreshAtD9 = Date.now();
     setNetworkStatusD9("online");
     setUpdatingStateD9(false);
+
+    const versionSheet = String(state.soporte?.version || "").trim();
+    if(versionSheet && versionSheet !== APP_VERSION){
+      setVersionUpdateAvailableD9(true);
+    } else {
+      setVersionUpdateAvailableD9(false);
+    }
+
     toast(`Datos actualizados · ${APP_VERSION}`);
   } catch (err) {
     setUpdatingStateD9(false);
+
+    const versionSheet = String(state.soporte?.version || "").trim();
+    if(versionSheet && versionSheet !== APP_VERSION){
+      setVersionUpdateAvailableD9(true);
+    } else {
+      setVersionUpdateAvailableD9(false);
+    }
+
     setNetworkStatusD9("error");
     toast("No se pudo actualizar datos", "error");
     console.error(err);
