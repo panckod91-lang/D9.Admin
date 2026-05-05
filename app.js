@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.1.3 (estadisticas pro)";
+const APP_VERSION = "v2.1.4 (stats texto fix)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -1348,6 +1348,27 @@ function topRankD9(map, field = "amount", limit = 5) {
     .slice(0, limit);
 }
 
+
+function cleanRankNameD9(name) {
+  const s = String(name || "Sin dato").trim();
+  if (!s) return "Sin dato";
+
+  const parts = s.split("|").map(p => p.trim()).filter(Boolean);
+
+  if (parts.length >= 2) {
+    const first = parts[0];
+    const second = parts[1];
+
+    if (/^(xd|gordo|cliente|nuevo|ocasional)$/i.test(first) || first.length < 4) {
+      return `${first} | ${second}`;
+    }
+
+    return first;
+  }
+
+  return s;
+}
+
 function renderRankListD9(title, rows, mode = "amount") {
   if (!rows.length) {
     return `
@@ -1371,7 +1392,7 @@ function renderRankListD9(title, rows, mode = "amount") {
           return `
             <div class="stats-rank-row-d9">
               <div class="stats-rank-top-d9">
-                <span><b>${i + 1}.</b> ${escapeHtml(r.name)}</span>
+                <span title="${escapeHtml(r.name)}"><b>${i + 1}.</b> ${escapeHtml(cleanRankNameD9(r.name))}</span>
                 <strong>${value}</strong>
               </div>
               <div class="stats-rank-bar-d9"><i style="width:${pct}%"></i></div>

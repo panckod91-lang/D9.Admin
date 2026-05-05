@@ -3929,3 +3929,61 @@ main{
     grid-template-columns:1fr !important;
   }
 }
+
+
+/* === v2.1.4 stats texto fix: solo contenido de rankings === */
+.stats-rank-row-d9{
+  min-width:0 !important;
+  max-width:100% !important;
+}
+
+.stats-rank-top-d9{
+  display:grid !important;
+  grid-template-columns:minmax(0, 1fr) auto !important;
+  gap:8px !important;
+  align-items:start !important;
+  min-width:0 !important;
+  max-width:100% !important;
+}
+
+.stats-rank-top-d9 span{
+  min-width:0 !important;
+  max-width:100% !important;
+  display:-webkit-box !important;
+  -webkit-line-clamp:2 !important;
+  -webkit-box-orient:vertical !important;
+  overflow:hidden !important;
+  white-space:normal !important;
+  text-overflow:ellipsis !important;
+  line-height:1.16 !important;
+  max-height:2.35em !important;
+}
+
+.stats-rank-top-d9 strong{
+  justify-self:end !important;
+  max-width:118px !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+  text-align:right !important;
+}
+
+.stats-rank-row-d9 small{
+  display:block !important;
+  max-width:100% !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
+
+@media (max-width:420px){
+  .stats-rank-top-d9{
+    grid-template-columns:minmax(0, 1fr) minmax(78px, 108px) !important;
+  }
+
+  .stats-rank-top-d9 strong{
+    max-width:108px !important;
+    font-size:12px !important;
+  }
+}
