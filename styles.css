@@ -4136,3 +4136,61 @@ body{
 #view-estadisticas .admin-page-head{
   padding-top:0 !important;
 }
+
+
+/* === v2.1.7 fix ranking clientes largo === */
+.stats-rank-row-d9{
+  min-width:0 !important;
+  max-width:100% !important;
+  overflow:hidden !important;
+}
+
+.stats-rank-top-d9{
+  display:grid !important;
+  grid-template-columns:minmax(0, 1fr) auto !important;
+  align-items:start !important;
+  gap:8px !important;
+  min-width:0 !important;
+  max-width:100% !important;
+}
+
+.stats-rank-top-d9 span{
+  min-width:0 !important;
+  max-width:100% !important;
+  display:-webkit-box !important;
+  -webkit-line-clamp:2 !important;
+  -webkit-box-orient:vertical !important;
+  overflow:hidden !important;
+  white-space:normal !important;
+  text-overflow:ellipsis !important;
+  line-height:1.16 !important;
+  max-height:2.35em !important;
+}
+
+.stats-rank-top-d9 strong{
+  justify-self:end !important;
+  max-width:112px !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+  text-align:right !important;
+}
+
+.stats-rank-bar-d9,
+.stats-rank-row-d9 small{
+  max-width:100% !important;
+  overflow:hidden !important;
+}
+
+/* En móviles angostos, priorizamos que no rompa antes que mostrar monto completo */
+@media (max-width:420px){
+  .stats-rank-top-d9{
+    grid-template-columns:minmax(0, 1fr) minmax(72px, 104px) !important;
+  }
+
+  .stats-rank-top-d9 strong{
+    max-width:104px !important;
+    font-size:12px !important;
+  }
+}
