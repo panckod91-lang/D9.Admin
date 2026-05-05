@@ -3684,3 +3684,91 @@ main{
   color:#173454 !important;
   font-weight:950 !important;
 }
+
+
+/* === v2.1.2 home compacto admin === */
+.admin-intro-card{
+  display:none !important;
+}
+
+.admin-hero{
+  margin-bottom:12px !important;
+}
+
+.admin-status-row{
+  margin-bottom:12px !important;
+  gap:8px !important;
+}
+
+.view-home-vnext.admin-view{
+  padding-top:0 !important;
+}
+
+.admin-grid{
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:10px !important;
+  margin-top:0 !important;
+}
+
+.admin-grid .action-card-vnext{
+  min-height:96px !important;
+  padding:14px 14px !important;
+  border-radius:22px !important;
+}
+
+.admin-grid .action-head-vnext{
+  gap:12px !important;
+}
+
+.admin-grid .icon-wrap-vnext{
+  width:48px !important;
+  height:48px !important;
+  min-width:48px !important;
+  font-size:24px !important;
+}
+
+.admin-grid .title-group-vnext strong{
+  font-size:1rem !important;
+  line-height:1.08 !important;
+}
+
+.admin-grid .title-group-vnext small{
+  font-size:.82rem !important;
+  line-height:1.2 !important;
+  margin-top:4px !important;
+  display:-webkit-box !important;
+  -webkit-line-clamp:2 !important;
+  -webkit-box-orient:vertical !important;
+  overflow:hidden !important;
+}
+
+.admin-grid .go-vnext{
+  font-size:1.6rem !important;
+}
+
+@media (max-width: 380px){
+  .admin-grid{
+    gap:9px !important;
+  }
+
+  .admin-grid .action-card-vnext{
+    min-height:90px !important;
+    padding:12px !important;
+  }
+
+  .admin-grid .icon-wrap-vnext{
+    width:44px !important;
+    height:44px !important;
+    min-width:44px !important;
+    font-size:22px !important;
+  }
+
+  .admin-grid .title-group-vnext strong{
+    font-size:.95rem !important;
+  }
+
+  .admin-grid .title-group-vnext small{
+    font-size:.78rem !important;
+  }
+}
