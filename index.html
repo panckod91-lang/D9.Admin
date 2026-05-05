@@ -56,6 +56,8 @@
           <button class="action-card-vnext" data-view="clientes" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext soft">🏪</span><span class="title-group-vnext"><strong>Clientes</strong><small>Vista rápida</small></span></span><span class="go-vnext">›</span></button>
           <button class="action-card-vnext" data-view="usuarios" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext soft">👤</span><span class="title-group-vnext"><strong>Usuarios</strong><small>Vendedores y colores</small></span></span><span class="go-vnext">›</span></button>
           <button class="action-card-vnext" data-view="publicidad" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext blue">🖼️</span><span class="title-group-vnext"><strong>Publicidad</strong><small>Banners y carrusel</small></span></span><span class="go-vnext">›</span></button>
+        
+          <button class="action-card-vnext" data-view="estadisticas" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext warm">📊</span><span class="title-group-vnext"><strong>Estadísticas</strong><small>Ventas, rankings y clientes</small></span></span><span class="go-vnext">›</span></button>
         </section>
       </section>
 
@@ -91,6 +93,32 @@
       <section id="view-clientes" class="view admin-view admin-simple-table-view"></section>
       <section id="view-usuarios" class="view admin-view admin-simple-table-view"></section>
       <section id="view-publicidad" class="view admin-view admin-simple-table-view"></section>
+      <section id="view-estadisticas" class="view admin-view">
+        <div class="admin-page-head">
+          <button class="admin-home-btn" data-view="home" type="button">🏠</button>
+          <div>
+            <h2>Estadísticas</h2>
+            <p>Ventas, rankings y actividad desde pedidos.</p>
+          </div>
+        </div>
+
+        <div class="admin-card stats-filter-card-d9">
+          <div class="stats-filter-row-d9">
+            <button id="btnStatsLoad" class="admin-primary-btn" type="button">Actualizar estadísticas</button>
+            <select id="statsRange" class="admin-input">
+              <option value="all">Todo</option>
+              <option value="today">Hoy</option>
+              <option value="7">Últimos 7 días</option>
+              <option value="30">Últimos 30 días</option>
+              <option value="month">Mes actual</option>
+            </select>
+          </div>
+          <p id="statsSummary" class="admin-note">Cargá estadísticas para ver el resumen.</p>
+        </div>
+
+        <div id="statsContent" class="stats-dashboard-d9"></div>
+      </section>
+
     </main>
   </div>
 

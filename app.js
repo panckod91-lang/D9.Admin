@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.1.2 (home compacto)";
+const APP_VERSION = "v2.1.3 (estadisticas pro)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -144,6 +144,7 @@ function setView(name, pushHistory = true) {
   if (name === "usuarios") renderUsuariosView();
   if (name === "publicidad") renderPublicidadView();
   if (name === "config") renderConfigForm();
+  if (name === "estadisticas") renderStatsView();
 
   if (pushHistory && name !== "home" && window.history && window.history.pushState) {
     history.pushState({ view: name }, "", location.href);
@@ -1293,6 +1294,196 @@ function setupBackToHomeD9() {
   });
 }
 
+
+function getOrderGroupsD9(rows) {
+  const map = new Map();
+  rows.forEach(row => {
+    const id = String(row.pedido_id || "").trim() || `sin_id_${map.size}`;
+    if (!map.has(id)) map.set(id, []);
+    map.get(id).push(row);
+  });
+  return Array.from(map.entries()).map(([id, lines]) => ({ id, lines, first: lines[0] || {} }));
+}
+
+function filterStatsRowsD9(rows, range) {
+  if (!range || range === "all") return rows;
+  const today = new Date();
+  const todayKey = today.toISOString().slice(0, 10);
+
+  return rows.filter(r => {
+    const d = parseOrderDate(r.fecha);
+    if (!d) return false;
+
+    if (range === "today") return d === todayKey;
+
+    if (range === "month") {
+      const ym = todayKey.slice(0, 7);
+      return d.slice(0, 7) === ym;
+    }
+
+    const days = Number(range || 0);
+    if (!days) return true;
+
+    const dt = new Date(d + "T00:00:00");
+    const min = new Date();
+    min.setDate(min.getDate() - days + 1);
+    min.setHours(0, 0, 0, 0);
+
+    return dt >= min;
+  });
+}
+
+function addRankD9(map, key, amount, qty = 0) {
+  const name = String(key || "Sin dato").trim() || "Sin dato";
+  if (!map.has(name)) map.set(name, { name, amount: 0, qty: 0, count: 0 });
+  const obj = map.get(name);
+  obj.amount += Number(amount || 0);
+  obj.qty += Number(qty || 0);
+  obj.count += 1;
+}
+
+function topRankD9(map, field = "amount", limit = 5) {
+  return Array.from(map.values())
+    .sort((a, b) => Number(b[field] || 0) - Number(a[field] || 0))
+    .slice(0, limit);
+}
+
+function renderRankListD9(title, rows, mode = "amount") {
+  if (!rows.length) {
+    return `
+      <div class="stats-rank-card-d9">
+        <strong>${escapeHtml(title)}</strong>
+        <p class="admin-note">Sin datos.</p>
+      </div>
+    `;
+  }
+
+  const max = Math.max(...rows.map(r => Number(r[mode] || 0)), 1);
+
+  return `
+    <div class="stats-rank-card-d9">
+      <strong>${escapeHtml(title)}</strong>
+      <div class="stats-rank-list-d9">
+        ${rows.map((r, i) => {
+          const value = mode === "qty" ? `${Number(r.qty || 0)} u.` : money(r.amount || 0);
+          const sub = mode === "qty" ? money(r.amount || 0) : `${Number(r.qty || 0)} u. · ${r.count} línea${r.count === 1 ? "" : "s"}`;
+          const pct = Math.max(4, Math.round((Number(r[mode] || 0) / max) * 100));
+          return `
+            <div class="stats-rank-row-d9">
+              <div class="stats-rank-top-d9">
+                <span><b>${i + 1}.</b> ${escapeHtml(r.name)}</span>
+                <strong>${value}</strong>
+              </div>
+              <div class="stats-rank-bar-d9"><i style="width:${pct}%"></i></div>
+              <small>${escapeHtml(sub)}</small>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function buildStatsD9(rows) {
+  const groups = getOrderGroupsD9(rows);
+  const total = rows.reduce((s, r) => s + Number(r.total_item || 0), 0);
+  const totalItems = rows.reduce((s, r) => s + Number(r.cantidad || 0), 0);
+  const ticket = groups.length ? total / groups.length : 0;
+
+  const productos = new Map();
+  const vendedores = new Map();
+  const clientes = new Map();
+
+  rows.forEach(r => {
+    addRankD9(productos, r.item || r.producto || r.nombre, r.total_item, r.cantidad);
+    addRankD9(vendedores, r.vendedor || r.vendedor_id, r.total_item, r.cantidad);
+    addRankD9(clientes, r.cliente, r.total_item, r.cantidad);
+  });
+
+  return {
+    rows,
+    groups,
+    total,
+    totalItems,
+    ticket,
+    productosMonto: topRankD9(productos, "amount"),
+    productosCantidad: topRankD9(productos, "qty"),
+    vendedores: topRankD9(vendedores, "amount"),
+    clientes: topRankD9(clientes, "amount")
+  };
+}
+
+function renderStatsDashboardD9(stats) {
+  return `
+    <section class="stats-kpi-grid-d9">
+      <div class="stats-kpi-card-d9"><span>Total vendido</span><strong>${money(stats.total)}</strong><small>${stats.groups.length} pedidos</small></div>
+      <div class="stats-kpi-card-d9"><span>Ticket promedio</span><strong>${money(stats.ticket)}</strong><small>por pedido</small></div>
+      <div class="stats-kpi-card-d9"><span>Productos vendidos</span><strong>${Number(stats.totalItems || 0)}</strong><small>unidades</small></div>
+      <div class="stats-kpi-card-d9"><span>Líneas cargadas</span><strong>${stats.rows.length}</strong><small>items en pedidos</small></div>
+    </section>
+
+    <section class="stats-rank-grid-d9">
+      ${renderRankListD9("Top productos por $", stats.productosMonto, "amount")}
+      ${renderRankListD9("Top productos por cantidad", stats.productosCantidad, "qty")}
+      ${renderRankListD9("Top vendedores", stats.vendedores, "amount")}
+      ${renderRankListD9("Top clientes", stats.clientes, "amount")}
+    </section>
+  `;
+}
+
+async function ensureStatsOrdersD9(force = false) {
+  if (!force && Array.isArray(state.pedidos) && state.pedidos.length) return state.pedidos;
+
+  const summary = $("#statsSummary");
+  const content = $("#statsContent");
+
+  if (summary) summary.textContent = "Cargando pedidos para estadísticas…";
+  if (content) content.innerHTML = "";
+
+  const url = `${API_BASE}?action=list_pedidos&ts=${Date.now()}`;
+  const res = await fetch(url, { cache: "no-store", redirect: "follow" });
+  const text = await res.text();
+  let data;
+
+  try {
+    data = JSON.parse(text);
+  } catch (err) {
+    throw new Error("El script no devolvió JSON: " + text.slice(0, 120));
+  }
+
+  if (!data.ok && !Array.isArray(data)) {
+    throw new Error(data.error || "Respuesta sin OK");
+  }
+
+  const raw = Array.isArray(data) ? data : (Array.isArray(data.pedidos) ? data.pedidos : []);
+  state.pedidos = raw.map(normalizeOrderRow);
+  return state.pedidos;
+}
+
+async function renderStatsView(force = false) {
+  const summary = $("#statsSummary");
+  const content = $("#statsContent");
+  const range = $("#statsRange")?.value || "all";
+
+  try {
+    const rowsAll = await ensureStatsOrdersD9(force);
+    const rows = filterStatsRowsD9(rowsAll, range);
+    const stats = buildStatsD9(rows);
+
+    if (summary) {
+      summary.textContent = `${stats.groups.length} pedido${stats.groups.length === 1 ? "" : "s"} · ${rows.length} línea${rows.length === 1 ? "" : "s"} · ${money(stats.total)}`;
+    }
+
+    if (content) content.innerHTML = renderStatsDashboardD9(stats);
+  } catch (err) {
+    console.error(err);
+    if (summary) summary.textContent = "Error cargando estadísticas: " + err.message;
+    if (content) content.innerHTML = `<div class="admin-card"><strong>Estadísticas</strong><p class="admin-note">No se pudieron cargar.</p></div>`;
+    toast("No se pudieron cargar estadísticas", "error");
+  }
+}
+
+
 function bindEvents() {
   document.addEventListener("click", (e) => {
     const viewBtn = e.target.closest("[data-view]");
@@ -1304,6 +1495,8 @@ function bindEvents() {
   $("#btnParseXls").onclick = parseXlsFile;
   $("#btnSaveProducts").onclick = saveImportedProducts;
   $("#btnLoadOrders").onclick = loadOrders;
+  $("#btnStatsLoad").onclick = () => renderStatsView(true);
+  $("#statsRange").onchange = () => renderStatsView(false);
   $("#orderFilterText").oninput = renderOrders;
   $("#orderFilterFrom").onchange = renderOrders;
   $("#orderFilterTo").onchange = renderOrders;
