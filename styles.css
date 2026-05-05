@@ -4033,3 +4033,54 @@ body{
     max-width:46% !important;
   }
 }
+
+
+/* === v2.1.5 fix scroll vertical estadísticas === */
+/* Mantiene bloqueo lateral, pero libera scroll vertical */
+html,
+body{
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  height:auto !important;
+  min-height:100% !important;
+}
+
+.app-shell,
+.admin-shell{
+  overflow-x:hidden !important;
+  overflow-y:visible !important;
+  height:auto !important;
+  min-height:100vh !important;
+}
+
+.view,
+.admin-view,
+#view-estadisticas{
+  overflow-x:hidden !important;
+  overflow-y:visible !important;
+  height:auto !important;
+  min-height:auto !important;
+  max-height:none !important;
+}
+
+#view-estadisticas.active{
+  display:block !important;
+  overflow-y:visible !important;
+  padding-bottom:90px !important;
+}
+
+.stats-dashboard-d9,
+.stats-rank-grid-d9,
+.stats-rank-card-d9{
+  overflow:visible !important;
+  height:auto !important;
+  max-height:none !important;
+}
+
+/* Evita que alguna grid genere ancho extra sin tocar el alto */
+.stats-kpi-grid-d9,
+.stats-filter-row-d9,
+.stats-rank-top-d9{
+  overflow-x:clip !important;
+  overflow-y:visible !important;
+}
