@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.1.5 (safe toast)";
+const APP_VERSION = "v2.0.9 (status refresh)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -14,7 +14,6 @@ const money = (v) => new Intl.NumberFormat("es-AR", { style: "currency", currenc
 const priceAR = (v) => new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(v) || 0);
 
 let lastRefreshAtD9 = 0;
-let isManualSyncD9 = false;
 
 function formatRefreshAgeD9() {
   if (!lastRefreshAtD9) return "Sin actualizar";
@@ -33,37 +32,6 @@ function formatRefreshAgeD9() {
 function updateRefreshBadgeD9() {
   const badge = $("#adminBadge .seller-name");
   if (badge) badge.textContent = formatRefreshAgeD9();
-}
-
-
-function setVersionUpdateAvailableD9(flag) {
-  const badge = document.querySelector("#adminBadge");
-  const el = document.querySelector("#adminBadge .seller-name");
-  if (!badge || !el) return;
-
-  badge.classList.toggle("version-alert-d9", !!flag);
-
-  if (flag) {
-    el.innerHTML = '⚠️ Nueva versión · <span class="reload-link-d9">Actualizar</span>';
-  } else {
-    badge.classList.remove("version-alert-d9");
-    el.textContent = formatRefreshAgeD9();
-  }
-}
-
-document.addEventListener("click", (e) => {
-  if (e.target.classList.contains("reload-link-d9")) {
-    window.location.reload();
-  }
-});
-
-function setUpdatingStateD9(updating) {
-  const badge = $("#adminBadge");
-  const text = $("#adminBadge .seller-name");
-  if (!badge || !text) return;
-
-  badge.classList.toggle("is-updating-d9", !!updating);
-  text.textContent = updating ? "Actualizando..." : formatRefreshAgeD9();
 }
 
 function setSyncBusyD9(busy) {
@@ -93,8 +61,6 @@ function setNetworkStatusD9(status) {
 }
 
 setInterval(updateRefreshBadgeD9, 30000);
-window.addEventListener("online", () => setNetworkStatusD9("online"));
-window.addEventListener("offline", () => setNetworkStatusD9("offline"));
 
 
 function toast(msg, type = "ok") {
@@ -132,44 +98,22 @@ function setView(name, pushHistory = true) {
   }
 }
 
-async function loadBootstrap(showToast = true) {
+async function loadBootstrap() {
   setSyncBusyD9(true);
-  setNetworkStatusD9(navigator.onLine ? "online" : "offline");
-  setUpdatingStateD9(true);
-
+  setNetworkStatusD9("syncing");
   try {
     const r = await fetch(BOOTSTRAP_URL, { cache: "no-store" });
     const data = await r.json();
-
     if (!data.ok) throw new Error(data.error || "Bootstrap sin OK");
-
     Object.assign(state, {
-      config: data.config || {},
-      soporte: data.soporte || {},
-      clientes: data.clientes || [],
-      productos: data.productos || [],
-      usuarios: data.usuarios || [],
-      publicidad: data.publicidad || []
+      config: data.config || {}, soporte: data.soporte || {}, clientes: data.clientes || [], productos: data.productos || [], usuarios: data.usuarios || [], publicidad: data.publicidad || []
     });
-
     applyHeader();
-
     lastRefreshAtD9 = Date.now();
     setNetworkStatusD9("online");
-
-    const versionSheet = String(state.soporte?.version || "").trim();
-    if (versionSheet && versionSheet !== APP_VERSION) {
-      setVersionUpdateAvailableD9(true);
-    } else {
-      setVersionUpdateAvailableD9(false);
-      setUpdatingStateD9(false);
-    }
-
-    if (showToast) {
-      toast(`Datos actualizados con Sheet · ${APP_VERSION}`, "ok");
-    }
+    updateRefreshBadgeD9();
+    toast(`Datos actualizados · ${APP_VERSION}`);
   } catch (err) {
-    setUpdatingStateD9(false);
     setNetworkStatusD9("error");
     toast("No se pudo actualizar datos", "error");
     console.error(err);
@@ -1299,7 +1243,7 @@ function bindEvents() {
     const viewBtn = e.target.closest("[data-view]");
     if (viewBtn) setView(viewBtn.dataset.view);
   });
-  $("#btnReload").onclick = () => loadBootstrap(true); loadBootstrap(); };
+  $("#btnReload").onclick = loadBootstrap;
   $("#btnCompanyInfo").onclick = openCompanyModal;
   $("#closeCompanyModal").onclick = () => $("#companyModal").classList.add("hidden");
   $("#btnParseXls").onclick = parseXlsFile;
@@ -1331,7 +1275,7 @@ function autoRefreshD9(){
 
   if(document.hidden) return;
 
-  loadBootstrap(false);
+  loadBootstrap();
 }
 
 setInterval(autoRefreshD9, AUTO_REFRESH_MS_D9);
