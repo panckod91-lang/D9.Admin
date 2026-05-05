@@ -3929,3 +3929,107 @@ main{
     grid-template-columns:1fr !important;
   }
 }
+
+
+/* === v2.1.4 fix ancho estadísticas / sin desplazamiento lateral === */
+html,
+body{
+  max-width:100% !important;
+  overflow-x:hidden !important;
+}
+
+*,
+*::before,
+*::after{
+  box-sizing:border-box !important;
+}
+
+.app-shell,
+.admin-shell,
+.view,
+.admin-view,
+.stats-dashboard-d9,
+.stats-kpi-grid-d9,
+.stats-rank-grid-d9,
+.stats-filter-card-d9,
+.stats-rank-card-d9,
+.stats-kpi-card-d9{
+  max-width:100% !important;
+  min-width:0 !important;
+}
+
+.admin-view{
+  overflow-x:hidden !important;
+}
+
+.stats-filter-row-d9{
+  grid-template-columns:minmax(0,1fr) minmax(130px,170px) !important;
+}
+
+.stats-filter-row-d9 > *{
+  min-width:0 !important;
+  max-width:100% !important;
+}
+
+#btnStatsLoad{
+  width:100% !important;
+  min-width:0 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  padding-left:10px !important;
+  padding-right:10px !important;
+}
+
+#statsRange{
+  width:100% !important;
+  min-width:0 !important;
+}
+
+.stats-kpi-grid-d9{
+  grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+  width:100% !important;
+}
+
+.stats-kpi-card-d9{
+  width:100% !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+}
+
+.stats-rank-card-d9{
+  width:100% !important;
+  overflow:hidden !important;
+}
+
+.stats-rank-top-d9{
+  width:100% !important;
+  min-width:0 !important;
+}
+
+.stats-rank-top-d9 span{
+  flex:1 1 auto !important;
+  min-width:0 !important;
+  max-width:100% !important;
+}
+
+.stats-rank-top-d9 strong{
+  flex:0 0 auto !important;
+  max-width:42% !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
+.stats-rank-bar-d9{
+  width:100% !important;
+}
+
+@media (max-width: 420px){
+  .stats-filter-row-d9{
+    grid-template-columns:1fr !important;
+  }
+
+  .stats-rank-top-d9 strong{
+    max-width:46% !important;
+  }
+}
