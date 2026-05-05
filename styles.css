@@ -3667,3 +3667,20 @@ main{
   50%{ transform:scale(1.12); opacity:1; }
   100%{ transform:scale(.92); opacity:.72; }
 }
+
+
+/* === v2.1.1 version alert safe === */
+#adminBadge.version-alert-d9{
+  cursor:pointer !important;
+}
+
+#adminBadge.version-alert-d9::before{
+  background:#ffb703 !important;
+  box-shadow:0 0 0 7px rgba(255,183,3,.22) !important;
+  animation:d9UpdatingPulse 950ms ease-in-out infinite !important;
+}
+
+#adminBadge.version-alert-d9 .seller-name{
+  color:#173454 !important;
+  font-weight:950 !important;
+}

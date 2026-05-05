@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.1.0 (status pro)";
+const APP_VERSION = "v2.1.1 (version alert safe)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -14,6 +14,7 @@ const money = (v) => new Intl.NumberFormat("es-AR", { style: "currency", currenc
 const priceAR = (v) => new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(v) || 0);
 
 let lastRefreshAtD9 = 0;
+let isVersionUpdateAvailableD9 = false;
 
 function formatRefreshAgeD9() {
   if (!lastRefreshAtD9) return "Sin actualizar";
@@ -30,8 +31,48 @@ function formatRefreshAgeD9() {
 }
 
 function updateRefreshBadgeD9() {
+  if (isVersionUpdateAvailableD9) return;
   const badge = $("#adminBadge .seller-name");
   if (badge) badge.textContent = formatRefreshAgeD9();
+}
+
+
+function setVersionUpdateAvailableD9(flag, latestVersion = "") {
+  isVersionUpdateAvailableD9 = !!flag;
+
+  const badge = $("#adminBadge");
+  const text = $("#adminBadge .seller-name");
+  if (!badge || !text) return;
+
+  badge.classList.toggle("version-alert-d9", !!flag);
+
+  if (flag) {
+    text.innerHTML = "⚠️ Actualizar";
+    badge.title = latestVersion ? `Nueva versión disponible: ${latestVersion}` : "Nueva versión disponible";
+    badge.setAttribute("role", "button");
+  } else {
+    badge.classList.remove("version-alert-d9");
+    badge.removeAttribute("role");
+    badge.title = "";
+    text.textContent = formatRefreshAgeD9();
+  }
+}
+
+async function checkAppVersionD9() {
+  try {
+    const res = await fetch(`./app.js?vcheck=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) return;
+    const txt = await res.text();
+    const match = txt.match(/const\s+APP_VERSION\s*=\s*"([^"]+)"/);
+    const latest = match ? String(match[1] || "").trim() : "";
+    if (latest && latest !== APP_VERSION) {
+      setVersionUpdateAvailableD9(true, latest);
+    } else {
+      setVersionUpdateAvailableD9(false);
+    }
+  } catch (err) {
+    console.warn("No se pudo verificar versión nueva:", err);
+  }
 }
 
 function setUpdatingStateD9(updating) {
@@ -125,6 +166,7 @@ async function loadBootstrap() {
     setNetworkStatusD9("online");
     setUpdatingStateD9(false);
     toast(`Datos actualizados · ${APP_VERSION}`);
+    checkAppVersionD9();
   } catch (err) {
     setUpdatingStateD9(false);
     setNetworkStatusD9("error");
@@ -1276,6 +1318,13 @@ function bindEvents() {
     if (adBtn) openAdEditor(adBtn.dataset.adEdit);
   });
 }
+
+
+document.addEventListener("click", (e) => {
+  const badge = e.target.closest?.("#adminBadge.version-alert-d9");
+  if (!badge) return;
+  window.location.href = `${location.pathname}?v=${Date.now()}`;
+});
 
 console.log("D9 Admin", APP_VERSION, API_BASE);
 setupBackToHomeD9();
