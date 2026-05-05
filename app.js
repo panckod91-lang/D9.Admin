@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.0.9 (status refresh)";
+const APP_VERSION = "v2.1.0 (status pro)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -34,6 +34,15 @@ function updateRefreshBadgeD9() {
   if (badge) badge.textContent = formatRefreshAgeD9();
 }
 
+function setUpdatingStateD9(updating) {
+  const badge = $("#adminBadge");
+  const text = $("#adminBadge .seller-name");
+  if (!badge || !text) return;
+
+  badge.classList.toggle("is-updating-d9", !!updating);
+  text.textContent = updating ? "Actualizando..." : formatRefreshAgeD9();
+}
+
 function setSyncBusyD9(busy) {
   const btn = $("#btnReload");
   if (!btn) return;
@@ -61,6 +70,8 @@ function setNetworkStatusD9(status) {
 }
 
 setInterval(updateRefreshBadgeD9, 30000);
+window.addEventListener("online", () => setNetworkStatusD9("online"));
+window.addEventListener("offline", () => setNetworkStatusD9("offline"));
 
 
 function toast(msg, type = "ok") {
@@ -100,7 +111,8 @@ function setView(name, pushHistory = true) {
 
 async function loadBootstrap() {
   setSyncBusyD9(true);
-  setNetworkStatusD9("syncing");
+  setNetworkStatusD9(navigator.onLine ? "online" : "offline");
+  setUpdatingStateD9(true);
   try {
     const r = await fetch(BOOTSTRAP_URL, { cache: "no-store" });
     const data = await r.json();
@@ -111,9 +123,10 @@ async function loadBootstrap() {
     applyHeader();
     lastRefreshAtD9 = Date.now();
     setNetworkStatusD9("online");
-    updateRefreshBadgeD9();
+    setUpdatingStateD9(false);
     toast(`Datos actualizados · ${APP_VERSION}`);
   } catch (err) {
+    setUpdatingStateD9(false);
     setNetworkStatusD9("error");
     toast("No se pudo actualizar datos", "error");
     console.error(err);
