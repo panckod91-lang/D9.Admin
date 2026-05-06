@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.1.4 (stats texto fix)";
+const APP_VERSION = "v2.1.5 (pedidos busca id_producto)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -360,6 +360,7 @@ function normalizeOrderRow(o) {
     vendedor: o.vendedor || "",
     cliente: o.cliente || "",
     item: o.item || o.detalle || o.producto || o.nombre || "",
+    id_producto: o.id_producto || o.producto_id || o.idproducto || "",
     cantidad: parsePrice(o.cantidad ?? o.total ?? 0) || 0,
     precio: parsePrice(o.precio || 0) || 0,
     total_item: parsePrice(o.total_item ?? o.totalitem ?? 0) || 0,
@@ -497,6 +498,7 @@ function renderOrders() {
       o.vendedor,
       o.cliente,
       o.item,
+      o.id_producto,
       o.cantidad,
       o.precio,
       o.total_item,
