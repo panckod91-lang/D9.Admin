@@ -3467,6 +3467,19 @@ main{
   text-overflow:ellipsis !important;
 }
 
+.order-match-hint-d9{
+  display:block !important;
+  margin-top:5px !important;
+  max-width:100% !important;
+  font-size:10px !important;
+  line-height:1.2 !important;
+  font-weight:900 !important;
+  color:#1f91bd !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
 .order-summary-side-d9{
   min-width:82px !important;
   max-width:110px !important;

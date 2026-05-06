@@ -1,6 +1,6 @@
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.1.5 (pedidos busca id_producto)";
+const APP_VERSION = "v2.1.6 (match codigo pedidos)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -360,7 +360,7 @@ function normalizeOrderRow(o) {
     vendedor: o.vendedor || "",
     cliente: o.cliente || "",
     item: o.item || o.detalle || o.producto || o.nombre || "",
-    id_producto: o.id_producto || o.producto_id || o.idproducto || "",
+    id_producto: o.id_producto || o.producto_id || o.codigo_producto || o.codigo || "",
     cantidad: parsePrice(o.cantidad ?? o.total ?? 0) || 0,
     precio: parsePrice(o.precio || 0) || 0,
     total_item: parsePrice(o.total_item ?? o.totalitem ?? 0) || 0,
@@ -396,6 +396,25 @@ function normalizeSearch(s) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+function getOrderMatchHintD9(rows, terms) {
+  if (!terms || !terms.length) return "";
+
+  const match = (rows || []).find(r => {
+    const productTxt = normalizeSearch([r.id_producto, r.item].join(" "));
+    return terms.every(t => productTxt.includes(t));
+  });
+
+  if (!match) return "";
+
+  const code = String(match.id_producto || "").trim();
+  const item = String(match.item || "").trim();
+
+  if (code && item) return `Coincide: Cód. ${code} · ${item}`;
+  if (code) return `Coincide: Cód. ${code}`;
+  if (item) return `Coincide: ${item}`;
+  return "";
+}
+
 function getUserColorForOrderD9(order, orderIndexBySeller) {
   const sellerId = String(order.vendedor_id || "").trim();
   const sellerName = String(order.vendedor || "").trim().toLowerCase();
@@ -416,7 +435,7 @@ function getUserColorForOrderD9(order, orderIndexBySeller) {
   return n % 2 === 0 ? c1 : c2;
 }
 
-function renderOrdersVisualD9(rows) {
+function renderOrdersVisualD9(rows, terms = []) {
   if (!rows.length) {
     return `<div class="admin-card"><strong>Pedidos</strong><p class="admin-note">Sin pedidos para mostrar.</p></div>`;
   }
@@ -447,6 +466,7 @@ function renderOrdersVisualD9(rows) {
           const cantidadItems = group.rows.reduce((s, r) => s + Number(r.cantidad || 0), 0);
           const lines = group.rows.length;
           const detailId = `order_detail_${escapeHtml(group.id).replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+          const matchHint = getOrderMatchHintD9(group.rows, terms);
 
           return `
             <details class="order-compact-admin-d9" style="--order-bg:${escapeHtml(color)}">
@@ -454,6 +474,7 @@ function renderOrdersVisualD9(rows) {
                 <div class="order-summary-main-d9">
                   <strong>${escapeHtml(first.cliente || "Sin cliente")}</strong>
                   <small>${escapeHtml(first.fecha || "")} · ${escapeHtml(first.vendedor || "Sin vendedor")}</small>
+                  ${matchHint ? `<span class="order-match-hint-d9">${escapeHtml(matchHint)}</span>` : ""}
                 </div>
                 <div class="order-summary-side-d9">
                   <span>${escapeHtml(group.id)}</span>
@@ -519,7 +540,7 @@ function renderOrders() {
   const pedidosCargados = new Set((state.pedidos || []).map(r => String(r.pedido_id || "").trim()).filter(Boolean)).size;
 
   $("#ordersSummary").textContent = `${totalPedidos} pedido${totalPedidos === 1 ? "" : "s"} · ${rows.length} línea${rows.length === 1 ? "" : "s"} · total filtrado: ${money(total)} · cargados: ${pedidosCargados} pedidos / ${(state.pedidos || []).length} líneas`;
-  $("#ordersTable").innerHTML = renderOrdersVisualD9(rows);
+  $("#ordersTable").innerHTML = renderOrdersVisualD9(rows, terms);
 }
 
 function normalizeClientRow(c = {}) {
