@@ -1,6 +1,7 @@
+const PEDIDOS_APP_URL_D9ADMIN = "https://pd9-cloud.pages.dev";
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.1.6 (match codigo pedidos)";
+const APP_VERSION = "v2.1.7 (logo abre pedidos)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -1534,7 +1535,13 @@ function bindEvents() {
     if (viewBtn) setView(viewBtn.dataset.view);
   });
   $("#btnReload").onclick = loadBootstrap;
-  $("#btnCompanyInfo").onclick = openCompanyModal;
+  const btnLogoD9 = $("#btnCompanyInfo");
+  if (btnLogoD9) {
+    btnLogoD9.title = "Abrir D9 Pedidos";
+    btnLogoD9.onclick = () => {
+      window.location.href = PEDIDOS_APP_URL_D9ADMIN;
+    };
+  }
   $("#closeCompanyModal").onclick = () => $("#companyModal").classList.add("hidden");
   $("#btnParseXls").onclick = parseXlsFile;
   $("#btnSaveProducts").onclick = saveImportedProducts;

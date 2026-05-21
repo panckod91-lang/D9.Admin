@@ -1,4 +1,4 @@
-const CACHE_NAME = "d9-admin-v216-match-codigo-pedidos";
+const CACHE_NAME = "d9-admin-v217-logo-abre-pedidos";
 
 self.addEventListener("install", event => {
   self.skipWaiting();
