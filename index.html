@@ -16,7 +16,7 @@
   <link rel="manifest" href="/manifest.json" />
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="/styles.css?v=202" />
+  <link rel="stylesheet" href="/styles.css?v=218" />
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -85,6 +85,10 @@
           <input id="orderFilterFrom" class="admin-input" type="date" />
           <input id="orderFilterTo" class="admin-input" type="date" />
           <button id="btnLoadOrders" class="admin-btn primary" type="button">Cargar pedidos</button>
+          <div class="orders-report-actions-d9">
+            <button id="btnOrdersReportPdf" class="admin-btn report-main-d9" type="button">📄 Generar PDF A4</button>
+            <button id="btnOrdersReportWa" class="admin-btn report-secondary-d9" type="button">🧾 Enviar WhatsApp</button>
+          </div>
         </div>
         <p id="ordersSummary" class="admin-note"></p>
         <div id="ordersTable" class="admin-table-wrap"></div>
@@ -131,6 +135,6 @@
   </div>
 
   <div id="toast" class="toast hidden"></div>
-  <script src="/app.js?v=202"></script>
+  <script src="/app.js?v=218"></script>
 </body>
 </html>

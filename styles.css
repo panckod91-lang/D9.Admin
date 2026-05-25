@@ -4000,3 +4000,37 @@ main{
     font-size:12px !important;
   }
 }
+
+
+/* === D9 Admin v2.1.8 reporte operativo de pedidos === */
+.orders-report-actions-d9{
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:8px !important;
+  margin-top:4px !important;
+}
+
+.orders-report-actions-d9 .admin-btn{
+  min-height:48px !important;
+  border-radius:16px !important;
+  font-size:.92rem !important;
+  line-height:1.1 !important;
+}
+
+.report-main-d9{
+  background:linear-gradient(135deg,#0f2a58,#2563eb) !important;
+  color:white !important;
+  box-shadow:0 8px 18px rgba(37,99,235,.18) !important;
+}
+
+.report-secondary-d9{
+  background:#e0f2fe !important;
+  color:#0f2a58 !important;
+  border:1px solid rgba(14,116,144,.14) !important;
+}
+
+@media (max-width:380px){
+  .orders-report-actions-d9{
+    grid-template-columns:1fr !important;
+  }
+}
