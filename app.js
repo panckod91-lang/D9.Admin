@@ -1,7 +1,7 @@
 const PEDIDOS_APP_URL_D9ADMIN = "https://pd9-cloud.pages.dev";
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.1.8 (reporte pedidos PDF WA)";
+const APP_VERSION = "v2.1.9 (reporte compacto PDF WA)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -582,7 +582,7 @@ function buildOrdersReportTextD9(rows) {
   const lines = [getOrdersReportTitleD9(), ""];
 
   groups.forEach(group => {
-    lines.push(`Cliente: ${group.cliente}`);
+    lines.push(`*Cliente: ${group.cliente}*`);
     lines.push("COD PROD   CANT.   DESCRIPCIÓN");
     group.rows.forEach(r => {
       const code = String(r.id_producto || "-").trim() || "-";
@@ -618,23 +618,23 @@ function buildOrdersReportHtmlD9(rows) {
 <meta charset="utf-8">
 <title>${escapeReportHtmlD9(getOrdersReportTitleD9())}</title>
 <style>
-  @page { size: A4; margin: 12mm; }
+  @page { size: A4 portrait; margin: 7mm; }
   * { box-sizing: border-box; }
-  body { font-family: Arial, Helvetica, sans-serif; color: #111827; margin: 0; font-size: 15px; }
-  h1 { margin: 0 0 4px; font-size: 24px; line-height: 1.15; letter-spacing: .02em; }
-  .meta { font-size: 12px; color: #4b5563; margin-bottom: 12px; }
-  .summary { font-size: 14px; font-weight: 700; margin: 0 0 14px; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; background: #f9fafb; }
-  .client { break-inside: avoid; page-break-inside: avoid; margin: 0 0 13px; padding-bottom: 10px; border-bottom: 2px solid #111827; }
-  .client-title { font-size: 17px; font-weight: 800; margin-bottom: 6px; }
-  table { width: 100%; border-collapse: collapse; }
-  th { text-align: left; font-size: 13px; border-bottom: 1px solid #111827; padding: 4px 5px; }
-  td { padding: 5px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
-  .code { width: 92px; font-weight: 700; white-space: nowrap; }
-  .qty { width: 64px; text-align: center; font-weight: 800; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #111827; margin: 0; font-size: 12.5px; line-height: 1.16; }
+  h1 { margin: 0 0 2px; font-size: 18px; line-height: 1.1; letter-spacing: .01em; }
+  .meta { font-size: 9.5px; color: #4b5563; margin-bottom: 5px; }
+  .summary { font-size: 11px; font-weight: 700; margin: 0 0 7px; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 5px; background: #f9fafb; }
+  .client { margin: 0 0 6px; padding-bottom: 5px; border-bottom: 1.4px solid #111827; }
+  .client-title { font-size: 13px; font-weight: 800; margin-bottom: 3px; }
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  th { text-align: left; font-size: 9.5px; border-bottom: 1px solid #111827; padding: 2px 3px; }
+  td { padding: 2px 3px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+  .code { width: 66px; font-weight: 700; white-space: nowrap; }
+  .qty { width: 44px; text-align: center; font-weight: 800; }
   .desc { font-weight: 600; }
-  @media print { .no-print { display:none !important; } body { font-size: 15px; } }
-  .no-print { position: sticky; top: 0; background: white; padding: 10px 0; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb; }
-  .no-print button { border: 0; border-radius: 10px; background: #2563eb; color: white; font-weight: 800; padding: 10px 14px; cursor: pointer; }
+  @media print { .no-print { display:none !important; } body { font-size: 12.5px; } }
+  .no-print { position: sticky; top: 0; background: white; padding: 7px 0; margin-bottom: 6px; border-bottom: 1px solid #e5e7eb; }
+  .no-print button { border: 0; border-radius: 9px; background: #2563eb; color: white; font-weight: 800; padding: 8px 12px; cursor: pointer; }
 </style>
 </head>
 <body>
