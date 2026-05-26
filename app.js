@@ -1,7 +1,7 @@
 const PEDIDOS_APP_URL_D9ADMIN = "https://pd9-cloud.pages.dev";
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.1.9 (reporte compacto PDF WA)";
+const APP_VERSION = "v2.1.10 (reporte resumen por cliente)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -582,6 +582,9 @@ function buildOrdersReportTextD9(rows) {
   const lines = [getOrdersReportTitleD9(), ""];
 
   groups.forEach(group => {
+    const groupProducts = group.rows.length;
+    const groupUnits = group.rows.reduce((sum, r) => sum + Number(r.cantidad || 0), 0);
+
     lines.push(`*Cliente: ${group.cliente}*`);
     lines.push("COD PROD   CANT.   DESCRIPCIÓN");
     group.rows.forEach(r => {
@@ -590,6 +593,7 @@ function buildOrdersReportTextD9(rows) {
       const item = String(r.item || "").trim();
       lines.push(`${code}   ${qty}   ${item}`);
     });
+    lines.push(`Productos distintos: ${groupProducts} · Unidades: ${groupUnits}`);
     lines.push("------------------------------");
   });
 
@@ -626,6 +630,7 @@ function buildOrdersReportHtmlD9(rows) {
   .summary { font-size: 11px; font-weight: 700; margin: 0 0 7px; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 5px; background: #f9fafb; }
   .client { margin: 0 0 6px; padding-bottom: 5px; border-bottom: 1.4px solid #111827; }
   .client-title { font-size: 13px; font-weight: 800; margin-bottom: 3px; }
+  .client-summary { margin-top: 3px; padding: 3px 4px 0; font-size: 10.5px; font-weight: 800; color: #111827; }
   table { width: 100%; border-collapse: collapse; table-layout: fixed; }
   th { text-align: left; font-size: 9.5px; border-bottom: 1px solid #111827; padding: 2px 3px; }
   td { padding: 2px 3px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
@@ -657,6 +662,7 @@ function buildOrdersReportHtmlD9(rows) {
           `).join("")}
         </tbody>
       </table>
+      <div class="client-summary">Productos distintos: ${group.rows.length} · Unidades: ${group.rows.reduce((sum, r) => sum + Number(r.cantidad || 0), 0)}</div>
     </section>
   `).join("")}
 </body>
