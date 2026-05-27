@@ -1,7 +1,7 @@
 const PEDIDOS_APP_URL_D9ADMIN = "https://pd9-cloud.pages.dev";
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.1.10 (reporte resumen por cliente)";
+const APP_VERSION = "v2.1.11 (reporte PDF paginado)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -622,33 +622,59 @@ function buildOrdersReportHtmlD9(rows) {
 <meta charset="utf-8">
 <title>${escapeReportHtmlD9(getOrdersReportTitleD9())}</title>
 <style>
-  @page { size: A4 portrait; margin: 7mm; }
+  @page {
+    size: A4 portrait;
+    margin: 7mm 7mm 10mm;
+    @bottom-right {
+      content: "Página " counter(page) " de " counter(pages);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 9px;
+      color: #4b5563;
+    }
+  }
   * { box-sizing: border-box; }
-  body { font-family: Arial, Helvetica, sans-serif; color: #111827; margin: 0; font-size: 12.5px; line-height: 1.16; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #111827; margin: 0; font-size: 12.2px; line-height: 1.13; }
   h1 { margin: 0 0 2px; font-size: 18px; line-height: 1.1; letter-spacing: .01em; }
-  .meta { font-size: 9.5px; color: #4b5563; margin-bottom: 5px; }
-  .summary { font-size: 11px; font-weight: 700; margin: 0 0 7px; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 5px; background: #f9fafb; }
-  .client { margin: 0 0 6px; padding-bottom: 5px; border-bottom: 1.4px solid #111827; }
-  .client-title { font-size: 13px; font-weight: 800; margin-bottom: 3px; }
-  .client-summary { margin-top: 3px; padding: 3px 4px 0; font-size: 10.5px; font-weight: 800; color: #111827; }
+  .meta { font-size: 9.5px; color: #4b5563; margin-bottom: 4px; }
+  .summary { font-size: 11px; font-weight: 700; margin: 0 0 6px; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 5px; background: #f9fafb; }
+  .client { margin: 0 0 5px; padding-bottom: 4px; border-bottom: 1.4px solid #111827; break-inside: avoid; page-break-inside: avoid; }
+  .client.client-long { break-inside: auto; page-break-inside: auto; break-before: page; page-break-before: always; break-after: page; page-break-after: always; }
+  .client.client-long:first-of-type { break-before: auto; page-break-before: auto; }
+  .client-title { font-size: 13px; font-weight: 800; margin-bottom: 2px; }
+  .client-summary { margin-top: 2px; padding: 2px 4px 0; font-size: 10.5px; font-weight: 800; color: #111827; }
   table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-  th { text-align: left; font-size: 9.5px; border-bottom: 1px solid #111827; padding: 2px 3px; }
-  td { padding: 2px 3px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+  th { text-align: left; font-size: 9.5px; border-bottom: 1px solid #111827; padding: 1.5px 3px; }
+  td { padding: 1.5px 3px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
   .code { width: 66px; font-weight: 700; white-space: nowrap; }
   .qty { width: 44px; text-align: center; font-weight: 800; }
   .desc { font-weight: 600; }
-  @media print { .no-print { display:none !important; } body { font-size: 12.5px; } }
+  .print-footer {
+    display: none;
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    font-size: 9px;
+    color: #4b5563;
+  }
+  @media print {
+    .no-print { display:none !important; }
+    body { font-size: 12.2px; }
+    .print-footer { display: block; }
+  }
   .no-print { position: sticky; top: 0; background: white; padding: 7px 0; margin-bottom: 6px; border-bottom: 1px solid #e5e7eb; }
   .no-print button { border: 0; border-radius: 9px; background: #2563eb; color: white; font-weight: 800; padding: 8px 12px; cursor: pointer; }
 </style>
 </head>
 <body>
+  <div class="print-footer">Página</div>
   <div class="no-print"><button onclick="window.print()">Imprimir / Guardar PDF</button></div>
   <h1>${escapeReportHtmlD9(getOrdersReportTitleD9())}</h1>
   <div class="meta">Generado: ${escapeReportHtmlD9(generatedAt)}</div>
   <div class="summary">Pedidos: ${groups.length} · Items: ${totalItems} · Unidades: ${totalUnits}</div>
-  ${groups.map(group => `
-    <section class="client">
+  ${groups.map((group, groupIndex) => {
+    const isLong = group.rows.length > 24;
+    return `
+    <section class="client ${isLong ? "client-long" : ""}">
       <div class="client-title">Cliente: ${escapeReportHtmlD9(group.cliente)}</div>
       <table>
         <thead><tr><th class="code">COD PROD</th><th class="qty">CANT.</th><th class="desc">DESCRIPCIÓN</th></tr></thead>
@@ -664,7 +690,8 @@ function buildOrdersReportHtmlD9(rows) {
       </table>
       <div class="client-summary">Productos distintos: ${group.rows.length} · Unidades: ${group.rows.reduce((sum, r) => sum + Number(r.cantidad || 0), 0)}</div>
     </section>
-  `).join("")}
+  `;
+  }).join("")}
 </body>
 </html>`;
 }
