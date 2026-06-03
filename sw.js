@@ -1,4 +1,4 @@
-const CACHE_NAME = "d9-admin-v2111-reporte-paginado";
+const CACHE_NAME = "d9-admin-v220-ventas";
 
 self.addEventListener("install", event => {
   self.skipWaiting();

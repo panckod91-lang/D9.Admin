@@ -53,6 +53,7 @@
           <button class="action-card-vnext" data-view="config" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext blue">⚙️</span><span class="title-group-vnext"><strong>Confi</strong><small>Títulos, ticker e institucional</small></span></span><span class="go-vnext">›</span></button>
           <button class="action-card-vnext" data-view="productos" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext cyan">📦</span><span class="title-group-vnext"><strong>Productos</strong><small>Importar XLS y preparar lista</small></span></span><span class="go-vnext">›</span></button>
           <button class="action-card-vnext" data-view="pedidos" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext warm">🧾</span><span class="title-group-vnext"><strong>Pedidos</strong><small>Visualizar y filtrar</small></span></span><span class="go-vnext">›</span></button>
+          <button class="action-card-vnext" data-view="ventas" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext cyan">🏪</span><span class="title-group-vnext"><strong>Ventas</strong><small>Mostrador y remitos</small></span></span><span class="go-vnext">›</span></button>
           <button class="action-card-vnext" data-view="clientes" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext soft">🏪</span><span class="title-group-vnext"><strong>Clientes</strong><small>Vista rápida</small></span></span><span class="go-vnext">›</span></button>
           <button class="action-card-vnext" data-view="usuarios" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext soft">👤</span><span class="title-group-vnext"><strong>Usuarios</strong><small>Vendedores y colores</small></span></span><span class="go-vnext">›</span></button>
           <button class="action-card-vnext" data-view="publicidad" type="button"><span class="action-head-vnext"><span class="icon-wrap-vnext blue">🖼️</span><span class="title-group-vnext"><strong>Publicidad</strong><small>Banners y carrusel</small></span></span><span class="go-vnext">›</span></button>
@@ -92,6 +93,18 @@
         </div>
         <p id="ordersSummary" class="admin-note"></p>
         <div id="ordersTable" class="admin-table-wrap"></div>
+      </section>
+
+      <section id="view-ventas" class="view admin-view">
+        <div class="admin-page-head"><button class="admin-home-btn" data-view="home" type="button">🏠</button><div><h2>Ventas</h2><p>Consulta de hoja ventas de mostrador.</p></div></div>
+        <div class="admin-card admin-filter-grid">
+          <input id="salesFilterText" class="admin-input" placeholder="Buscar cliente, usuario o producto" />
+          <input id="salesFilterFrom" class="admin-input" type="date" />
+          <input id="salesFilterTo" class="admin-input" type="date" />
+          <button id="btnLoadSales" class="admin-btn primary" type="button">Cargar ventas</button>
+        </div>
+        <p id="salesSummary" class="admin-note"></p>
+        <div id="salesTable" class="admin-table-wrap"></div>
       </section>
 
       <section id="view-clientes" class="view admin-view admin-simple-table-view"></section>

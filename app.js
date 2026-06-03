@@ -1,12 +1,12 @@
 const PEDIDOS_APP_URL_D9ADMIN = "https://pd9-cloud.pages.dev";
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.1.11 (reporte PDF paginado)";
+const APP_VERSION = "v2.2.0 (ventas admin)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
 const state = {
-  config: {}, soporte: {}, clientes: [], productos: [], usuarios: [], publicidad: [], pedidos: [], importedProducts: [], pedidosFiltrados: []
+  config: {}, soporte: {}, clientes: [], productos: [], usuarios: [], publicidad: [], pedidos: [], ventas: [], importedProducts: [], pedidosFiltrados: [], ventasFiltradas: []
 };
 
 const $ = (s) => document.querySelector(s);
@@ -146,6 +146,7 @@ function setView(name, pushHistory = true) {
   if (name === "publicidad") renderPublicidadView();
   if (name === "config") renderConfigForm();
   if (name === "estadisticas") renderStatsView();
+  if (name === "ventas") renderVentasView();
 
   if (pushHistory && name !== "home" && window.history && window.history.pushState) {
     history.pushState({ view: name }, "", location.href);
@@ -1727,6 +1728,201 @@ async function renderStatsView(force = false) {
 }
 
 
+// ─── VENTAS MOSTRADOR ────────────────────────────────────────────────
+
+async function loadSales() {
+  const url = `${API_BASE}?action=list_ventas&ts=${Date.now()}`;
+  try {
+    const summary = $("#salesSummary");
+    const table = $("#salesTable");
+    if (summary) summary.textContent = "Cargando ventas…";
+    if (table) table.innerHTML = "";
+
+    const res = await fetch(url, { cache: "no-store", redirect: "follow" });
+    const text = await res.text();
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch (err) {
+      throw new Error("El script no devolvió JSON: " + text.slice(0, 120));
+    }
+
+    if (!data.ok && !Array.isArray(data)) {
+      throw new Error(data.error || "Respuesta sin OK");
+    }
+
+    const rawVentas = Array.isArray(data) ? data : (Array.isArray(data.ventas) ? data.ventas : []);
+    state.ventas = rawVentas.map(normalizeSaleRowD9);
+    renderVentasView();
+    toast(`Ventas cargadas: ${state.ventas.length}`);
+  } catch (err) {
+    console.error(err);
+    state.ventas = [];
+    const summary = $("#salesSummary");
+    const table = $("#salesTable");
+    if (summary) summary.textContent = "Error cargando ventas: " + err.message;
+    if (table) table.innerHTML = `<div class="admin-card"><strong>Ventas</strong><p class="admin-note">No se pudieron cargar. Revisá que el Apps Script tenga action=list_ventas.</p></div>`;
+    toast("No se pudieron cargar ventas", "error");
+  }
+}
+
+function normalizeSaleRowD9(v = {}) {
+  return {
+    fecha: v.fecha || "",
+    venta_id: v.venta_id || v.id_venta || v.id || "",
+    usuario_id: v.usuario_id || "",
+    usuario: v.usuario || "",
+    rol: v.rol || "",
+    cliente_id: v.cliente_id || "",
+    cliente: v.cliente || "",
+    telefono: v.telefono || "",
+    direccion: v.direccion || "",
+    producto: v.producto || v.item || v.nombre || "",
+    id_producto: v.id_producto || v.producto_id || v.codigo || "",
+    cantidad: parsePrice(v.cantidad ?? 0) || 0,
+    precio_unitario: parsePrice(v.precio_unitario ?? v.precio ?? 0) || 0,
+    subtotal: parsePrice(v.subtotal ?? v.total_item ?? 0) || 0,
+    total_venta: parsePrice(v.total_venta ?? v.total ?? 0) || 0,
+    _raw: v
+  };
+}
+
+function parseSaleDateD9(fecha) {
+  return parseOrderDate(fecha);
+}
+
+function getFilteredSalesD9() {
+  const qRaw = $("#salesFilterText")?.value || "";
+  const terms = normalizeSearch(qRaw).split(/\s+/).filter(Boolean);
+  const from = $("#salesFilterFrom")?.value || "";
+  const to = $("#salesFilterTo")?.value || "";
+
+  return (state.ventas || []).filter(v => {
+    const txt = normalizeSearch([
+      v.fecha,
+      v.venta_id,
+      v.usuario_id,
+      v.usuario,
+      v.rol,
+      v.cliente_id,
+      v.cliente,
+      v.telefono,
+      v.direccion,
+      v.producto,
+      v.id_producto,
+      v.cantidad,
+      v.precio_unitario,
+      v.subtotal,
+      v.total_venta
+    ].join(" "));
+
+    if (terms.length && !terms.every(t => txt.includes(t))) return false;
+
+    const d = parseSaleDateD9(v.fecha);
+    if (from && d && d < from) return false;
+    if (to && d && d > to) return false;
+    return true;
+  });
+}
+
+function groupSalesD9(rows) {
+  const groups = [];
+  const map = new Map();
+
+  (rows || []).forEach((row, index) => {
+    const id = String(row.venta_id || "").trim() || `sin_id_${index}`;
+    if (!map.has(id)) {
+      const group = {
+        id,
+        fecha: row.fecha || "",
+        usuario: row.usuario || "",
+        cliente: row.cliente || "Consumidor final",
+        rows: [],
+        total: Number(row.total_venta || 0) || 0
+      };
+      map.set(id, group);
+      groups.push(group);
+    }
+    const g = map.get(id);
+    g.rows.push(row);
+    g.total = Math.max(Number(g.total || 0), Number(row.total_venta || 0), g.rows.reduce((s, r) => s + Number(r.subtotal || 0), 0));
+  });
+
+  return groups;
+}
+
+function renderSalesVisualD9(rows) {
+  if (!rows.length) {
+    return `<div class="admin-card"><strong>Ventas</strong><p class="admin-note">Sin ventas para mostrar.</p></div>`;
+  }
+
+  const groups = groupSalesD9(rows);
+
+  return `
+    <div class="orders-visual-card-d9">
+      <div class="orders-visual-head-d9">
+        <strong>Ventas</strong>
+        <span>${groups.length} venta${groups.length === 1 ? "" : "s"}</span>
+      </div>
+      <div class="orders-list-d9">
+        ${groups.map(group => {
+          const units = group.rows.reduce((s, r) => s + Number(r.cantidad || 0), 0);
+          return `
+            <details class="order-card-d9">
+              <summary>
+                <div>
+                  <strong>${escapeHtml(group.cliente || "Consumidor final")}</strong>
+                  <span>${escapeHtml(group.fecha || "")} · ${escapeHtml(group.usuario || "Mostrador")}</span>
+                </div>
+                <div class="order-total-d9">
+                  <em>${escapeHtml(group.id || "")}</em>
+                  <strong>${money(group.total || 0)}</strong>
+                </div>
+              </summary>
+              <div class="order-detail-d9">
+                <div class="order-detail-meta-d9">${group.rows.length} producto${group.rows.length === 1 ? "" : "s"} · Cant/Peso: ${priceAR(units)}</div>
+                ${group.rows.map(r => `
+                  <div class="order-row-d9">
+                    <span>${escapeHtml(r.id_producto || "-")}</span>
+                    <span>${escapeHtml(r.producto || "")}</span>
+                    <em>${escapeHtml(priceAR(r.cantidad || 0))}</em>
+                    <small>${money(r.precio_unitario || 0)}</small>
+                    <strong>${money(r.subtotal || 0)}</strong>
+                  </div>
+                `).join("")}
+              </div>
+            </details>
+          `;
+        }).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderVentasView() {
+  const summary = $("#salesSummary");
+  const table = $("#salesTable");
+  if (!summary || !table) return;
+
+  if (!state.ventas.length) {
+    summary.textContent = "Cargá ventas para consultar la hoja ventas.";
+    table.innerHTML = "";
+    return;
+  }
+
+  const rows = getFilteredSalesD9();
+  state.ventasFiltradas = rows;
+  const groups = groupSalesD9(rows);
+  const total = groups.reduce((s, g) => s + Number(g.total || 0), 0);
+  const items = rows.length;
+  const units = rows.reduce((s, r) => s + Number(r.cantidad || 0), 0);
+
+  summary.textContent = `${groups.length} venta${groups.length === 1 ? "" : "s"} · ${items} línea${items === 1 ? "" : "s"} · cant/peso: ${priceAR(units)} · total filtrado: ${money(total)} · cargadas: ${groupSalesD9(state.ventas).length} ventas / ${state.ventas.length} líneas`;
+  table.innerHTML = renderSalesVisualD9(rows);
+}
+
+
 function bindEvents() {
   document.addEventListener("click", (e) => {
     const viewBtn = e.target.closest("[data-view]");
@@ -1744,6 +1940,8 @@ function bindEvents() {
   $("#btnParseXls").onclick = parseXlsFile;
   $("#btnSaveProducts").onclick = saveImportedProducts;
   $("#btnLoadOrders").onclick = loadOrders;
+  const btnLoadSales = $("#btnLoadSales");
+  if (btnLoadSales) btnLoadSales.onclick = loadSales;
   const btnReportPdf = $("#btnOrdersReportPdf");
   if (btnReportPdf) btnReportPdf.onclick = generateOrdersReportPdfD9;
   const btnReportWa = $("#btnOrdersReportWa");
@@ -1753,6 +1951,12 @@ function bindEvents() {
   $("#orderFilterText").oninput = renderOrders;
   $("#orderFilterFrom").onchange = renderOrders;
   $("#orderFilterTo").onchange = renderOrders;
+  const salesFilterText = $("#salesFilterText");
+  if (salesFilterText) salesFilterText.oninput = renderVentasView;
+  const salesFilterFrom = $("#salesFilterFrom");
+  if (salesFilterFrom) salesFilterFrom.onchange = renderVentasView;
+  const salesFilterTo = $("#salesFilterTo");
+  if (salesFilterTo) salesFilterTo.onchange = renderVentasView;
   document.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-client-edit]");
     if (btn) openClientEditor(btn.dataset.clientEdit);
