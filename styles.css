@@ -4034,3 +4034,78 @@ main{
     grid-template-columns:1fr !important;
   }
 }
+
+
+/* === v2.2.1 ventas mostrador visual ordenado === */
+.sales-list-d9{
+  gap:12px !important;
+}
+
+.sale-card-admin-d9{
+  background:#fff !important;
+}
+
+.sale-id-d9{
+  display:block !important;
+  margin-top:4px !important;
+  font-size:11px !important;
+  line-height:1.15 !important;
+  font-weight:900 !important;
+  color:#173454 !important;
+  font-style:italic !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
+.sale-detail-admin-d9{
+  display:grid !important;
+  gap:0 !important;
+}
+
+.sale-detail-meta-d9{
+  text-align:left !important;
+  padding:8px 12px !important;
+  background:rgba(31,145,189,.05) !important;
+}
+
+.sale-detail-line-d9{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  gap:10px !important;
+  align-items:center !important;
+  padding:10px 12px !important;
+  border-top:1px solid rgba(23,52,84,.07) !important;
+  box-sizing:border-box !important;
+}
+
+.sale-product-main-d9{
+  min-width:0 !important;
+}
+
+.sale-product-main-d9 strong{
+  display:block !important;
+  font-size:12px !important;
+  line-height:1.18 !important;
+  color:#173454 !important;
+  font-weight:950 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
+.sale-product-main-d9 span{
+  display:block !important;
+  margin-top:4px !important;
+  font-size:11px !important;
+  line-height:1.15 !important;
+  color:#6f8294 !important;
+  font-weight:800 !important;
+}
+
+.sale-detail-line-d9 > b{
+  font-size:13px !important;
+  font-weight:950 !important;
+  color:#173454 !important;
+  white-space:nowrap !important;
+  text-align:right !important;
+}

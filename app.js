@@ -1,7 +1,7 @@
 const PEDIDOS_APP_URL_D9ADMIN = "https://pd9-cloud.pages.dev";
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.2.0 (ventas admin)";
+const APP_VERSION = "v2.2.1 (ventas visual ordenado)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -1860,41 +1860,42 @@ function renderSalesVisualD9(rows) {
   const groups = groupSalesD9(rows);
 
   return `
-    <div class="orders-visual-card-d9">
+    <div class="orders-visual-card-d9 sales-visual-d9">
       <div class="orders-visual-head-d9">
         <strong>Ventas</strong>
         <span>${groups.length} venta${groups.length === 1 ? "" : "s"}</span>
       </div>
-      <div class="orders-list-d9">
-        ${groups.map(group => {
-          const units = group.rows.reduce((s, r) => s + Number(r.cantidad || 0), 0);
-          return `
-            <details class="order-card-d9">
-              <summary>
-                <div>
+      <div class="orders-compact-list-d9 sales-list-d9">
+        ${groups.map(group => `
+          <details class="order-compact-admin-d9 sale-card-admin-d9">
+            <summary>
+              <div class="order-summary-admin-d9">
+                <div class="order-summary-main-d9">
                   <strong>${escapeHtml(group.cliente || "Consumidor final")}</strong>
-                  <span>${escapeHtml(group.fecha || "")} · ${escapeHtml(group.usuario || "Mostrador")}</span>
+                  <small>${escapeHtml(group.fecha || "")} · ${escapeHtml(group.usuario || "Mostrador")}</small>
+                  <span class="sale-id-d9">${escapeHtml(group.id || "")}</span>
                 </div>
-                <div class="order-total-d9">
-                  <em>${escapeHtml(group.id || "")}</em>
-                  <strong>${money(group.total || 0)}</strong>
+                <div class="order-summary-side-d9">
+                  <span>${group.rows.length} producto${group.rows.length === 1 ? "" : "s"}</span>
+                  <b>${money(group.total || 0)}</b>
                 </div>
-              </summary>
-              <div class="order-detail-d9">
-                <div class="order-detail-meta-d9">${group.rows.length} producto${group.rows.length === 1 ? "" : "s"} · Cant/Peso: ${priceAR(units)}</div>
-                ${group.rows.map(r => `
-                  <div class="order-row-d9">
-                    <span>${escapeHtml(r.id_producto || "-")}</span>
-                    <span>${escapeHtml(r.producto || "")}</span>
-                    <em>${escapeHtml(priceAR(r.cantidad || 0))}</em>
-                    <small>${money(r.precio_unitario || 0)}</small>
-                    <strong>${money(r.subtotal || 0)}</strong>
-                  </div>
-                `).join("")}
+                <div class="order-summary-arrow-d9">⌄</div>
               </div>
-            </details>
-          `;
-        }).join("")}
+            </summary>
+            <div class="order-detail-admin-d9 sale-detail-admin-d9">
+              <div class="order-detail-meta-d9 sale-detail-meta-d9">${group.rows.length} producto${group.rows.length === 1 ? "" : "s"}</div>
+              ${group.rows.map(r => `
+                <div class="sale-detail-line-d9">
+                  <div class="sale-product-main-d9">
+                    <strong>${escapeHtml(r.id_producto || "-")} · ${escapeHtml(r.producto || "")}</strong>
+                    <span>Cant/Peso: ${escapeHtml(priceAR(r.cantidad || 0))} · P.Unit: ${money(r.precio_unitario || 0)}</span>
+                  </div>
+                  <b>${money(r.subtotal || 0)}</b>
+                </div>
+              `).join("")}
+            </div>
+          </details>
+        `).join("")}
       </div>
     </div>
   `;
@@ -1916,9 +1917,7 @@ function renderVentasView() {
   const groups = groupSalesD9(rows);
   const total = groups.reduce((s, g) => s + Number(g.total || 0), 0);
   const items = rows.length;
-  const units = rows.reduce((s, r) => s + Number(r.cantidad || 0), 0);
-
-  summary.textContent = `${groups.length} venta${groups.length === 1 ? "" : "s"} · ${items} línea${items === 1 ? "" : "s"} · cant/peso: ${priceAR(units)} · total filtrado: ${money(total)} · cargadas: ${groupSalesD9(state.ventas).length} ventas / ${state.ventas.length} líneas`;
+  summary.textContent = `${groups.length} venta${groups.length === 1 ? "" : "s"} · ${items} línea${items === 1 ? "" : "s"} · total filtrado: ${money(total)} · cargadas: ${groupSalesD9(state.ventas).length} ventas / ${state.ventas.length} líneas`;
   table.innerHTML = renderSalesVisualD9(rows);
 }
 
