@@ -1,7 +1,7 @@
 const PEDIDOS_APP_URL_D9ADMIN = "https://pd9-cloud.pages.dev";
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.2.1 (ventas visual ordenado)";
+const APP_VERSION = "v2.2.2 (pedidos anulados)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -367,6 +367,7 @@ function normalizeOrderRow(o) {
     precio: parsePrice(o.precio || 0) || 0,
     total_item: parsePrice(o.total_item ?? o.totalitem ?? 0) || 0,
     total_pedido: parsePrice(o.total_pedido ?? o.totalpedido ?? 0) || 0,
+    estado: String(o.estado || o.status || o.situacion || "").trim(),
     _raw: o
   };
 }
@@ -396,6 +397,18 @@ function normalizeSearch(s) {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
+}
+
+
+function isOrderAnuladoD9(order) {
+  return normalizeSearch(order?.estado || "").includes("anulado");
+}
+
+function parseOrderFilterTermsD9(raw) {
+  const allTerms = normalizeSearch(raw).split(/\s+/).filter(Boolean);
+  const wantsAnulados = allTerms.some(t => t.includes("anulado"));
+  const terms = allTerms.filter(t => !t.includes("anulado"));
+  return { terms, wantsAnulados };
 }
 
 function getOrderMatchHintD9(rows, terms) {
@@ -469,12 +482,13 @@ function renderOrdersVisualD9(rows, terms = []) {
           const lines = group.rows.length;
           const detailId = `order_detail_${escapeHtml(group.id).replace(/[^a-zA-Z0-9_-]/g, "_")}`;
           const matchHint = getOrderMatchHintD9(group.rows, terms);
+          const anulado = group.rows.some(isOrderAnuladoD9);
 
           return `
-            <details class="order-compact-admin-d9" style="--order-bg:${escapeHtml(color)}">
+            <details class="order-compact-admin-d9 ${anulado ? "order-anulado-admin-d9" : ""}" style="--order-bg:${escapeHtml(color)}">
               <summary class="order-summary-admin-d9">
                 <div class="order-summary-main-d9">
-                  <strong>${escapeHtml(first.cliente || "Sin cliente")}</strong>
+                  <strong>${escapeHtml(first.cliente || "Sin cliente")} ${anulado ? `<span class="order-status-badge-d9">ANULADO</span>` : ""}</strong>
                   <small>${escapeHtml(first.fecha || "")} · ${escapeHtml(first.vendedor || "Sin vendedor")}</small>
                   ${matchHint ? `<span class="order-match-hint-d9">${escapeHtml(matchHint)}</span>` : ""}
                 </div>
@@ -510,11 +524,21 @@ function renderOrdersVisualD9(rows, terms = []) {
 
 function getFilteredOrdersD9() {
   const qRaw = $("#orderFilterText")?.value || "";
-  const terms = normalizeSearch(qRaw).split(/\s+/).filter(Boolean);
+  const { terms, wantsAnulados } = parseOrderFilterTermsD9(qRaw);
   const from = $("#orderFilterFrom")?.value || "";
   const to = $("#orderFilterTo")?.value || "";
 
   return (state.pedidos || []).filter(o => {
+    const anulado = isOrderAnuladoD9(o);
+
+    // Regla D9: los pedidos anulados se ocultan del historial normal.
+    // Para verlos, buscar "anulado" o "anulados". Ej: "Mati anulados".
+    if (wantsAnulados) {
+      if (!anulado) return false;
+    } else if (anulado) {
+      return false;
+    }
+
     const txt = normalizeSearch([
       o.fecha,
       o.pedido_id,
@@ -526,7 +550,8 @@ function getFilteredOrdersD9() {
       o.cantidad,
       o.precio,
       o.total_item,
-      o.total_pedido
+      o.total_pedido,
+      o.estado
     ].join(" "));
 
     if (terms.length && !terms.every(t => txt.includes(t))) return false;
@@ -730,7 +755,7 @@ function sendOrdersReportWhatsappD9() {
 
 function renderOrders() {
   const qRaw = $("#orderFilterText")?.value || "";
-  const terms = normalizeSearch(qRaw).split(/\s+/).filter(Boolean);
+  const { terms, wantsAnulados } = parseOrderFilterTermsD9(qRaw);
   const rows = getFilteredOrdersD9();
   state.pedidosFiltrados = rows;
 
@@ -738,8 +763,10 @@ function renderOrders() {
   const pedidosUnicos = new Set(rows.map(r => String(r.pedido_id || "").trim()).filter(Boolean));
   const totalPedidos = pedidosUnicos.size;
   const pedidosCargados = new Set((state.pedidos || []).map(r => String(r.pedido_id || "").trim()).filter(Boolean)).size;
+  const pedidosAnulados = new Set((state.pedidos || []).filter(isOrderAnuladoD9).map(r => String(r.pedido_id || "").trim()).filter(Boolean)).size;
+  const modoAnulados = wantsAnulados ? ` · mostrando anulados` : (pedidosAnulados ? ` · anulados ocultos: ${pedidosAnulados}` : "");
 
-  $("#ordersSummary").textContent = `${totalPedidos} pedido${totalPedidos === 1 ? "" : "s"} · ${rows.length} línea${rows.length === 1 ? "" : "s"} · total filtrado: ${money(total)} · cargados: ${pedidosCargados} pedidos / ${(state.pedidos || []).length} líneas`;
+  $("#ordersSummary").textContent = `${totalPedidos} pedido${totalPedidos === 1 ? "" : "s"} · ${rows.length} línea${rows.length === 1 ? "" : "s"} · total filtrado: ${money(total)} · cargados: ${pedidosCargados} pedidos / ${(state.pedidos || []).length} líneas${modoAnulados}`;
   $("#ordersTable").innerHTML = renderOrdersVisualD9(rows, terms);
 }
 

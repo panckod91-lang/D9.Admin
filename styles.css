@@ -4109,3 +4109,25 @@ main{
   white-space:nowrap !important;
   text-align:right !important;
 }
+
+
+/* === v2.2.2 pedidos anulados === */
+.order-compact-admin-d9.order-anulado-admin-d9{
+  border-color:rgba(185,28,28,.28) !important;
+  background:#fff1f2 !important;
+}
+
+.order-status-badge-d9{
+  display:inline-flex !important;
+  align-items:center !important;
+  margin-left:7px !important;
+  padding:2px 6px !important;
+  border-radius:999px !important;
+  background:#fee2e2 !important;
+  color:#991b1b !important;
+  font-size:9px !important;
+  line-height:1 !important;
+  font-weight:950 !important;
+  vertical-align:middle !important;
+  letter-spacing:.02em !important;
+}
