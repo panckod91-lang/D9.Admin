@@ -1,7 +1,7 @@
 const PEDIDOS_APP_URL_D9ADMIN = "https://pd9-cloud.pages.dev";
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.2.2 (pedidos anulados)";
+const APP_VERSION = "v2.2.3 (notas reporte)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -551,7 +551,9 @@ function getFilteredOrdersD9() {
       o.precio,
       o.total_item,
       o.total_pedido,
-      o.estado
+      o.estado,
+      o.nota_item,
+      o.nota_pedido
     ].join(" "));
 
     if (terms.length && !terms.every(t => txt.includes(t))) return false;
@@ -601,6 +603,26 @@ function getGroupedOrdersForReportD9(rows) {
   return groups;
 }
 
+
+function getOrderNoteItemD9(row) {
+  return String(row?.nota_item || row?.nota || row?.observacion_item || "").trim();
+}
+
+function getOrderNotePedidoD9(group) {
+  const rows = Array.isArray(group?.rows) ? group.rows : [];
+  for (const row of rows) {
+    const note = String(row?.nota_pedido || row?.observacion_pedido || row?.observaciones || "").trim();
+    if (note) return note;
+  }
+  return "";
+}
+
+function buildReportDescriptionD9(row) {
+  const item = String(row?.item || "").trim();
+  const note = getOrderNoteItemD9(row);
+  return note ? `${item} || ${note}` : item;
+}
+
 function buildOrdersReportTextD9(rows) {
   const groups = getGroupedOrdersForReportD9(rows);
   const totalItems = rows.length;
@@ -611,12 +633,13 @@ function buildOrdersReportTextD9(rows) {
     const groupProducts = group.rows.length;
     const groupUnits = group.rows.reduce((sum, r) => sum + Number(r.cantidad || 0), 0);
 
-    lines.push(`*Cliente: ${group.cliente}*`);
+    const notaPedido = getOrderNotePedidoD9(group);
+    lines.push(`*Cliente: ${group.cliente}${notaPedido ? " || Nota: " + notaPedido : ""}*`);
     lines.push("COD PROD   CANT.   DESCRIPCIÓN");
     group.rows.forEach(r => {
       const code = String(r.id_producto || "-").trim() || "-";
       const qty = Number(r.cantidad || 0);
-      const item = String(r.item || "").trim();
+      const item = buildReportDescriptionD9(r);
       lines.push(`${code}   ${qty}   ${item}`);
     });
     lines.push(`Productos distintos: ${groupProducts} · Unidades: ${groupUnits}`);
@@ -674,6 +697,8 @@ function buildOrdersReportHtmlD9(rows) {
   .code { width: 66px; font-weight: 700; white-space: nowrap; }
   .qty { width: 44px; text-align: center; font-weight: 800; }
   .desc { font-weight: 600; }
+  .item-note-inline { font-weight: 700; color: #92400e; font-style: italic; }
+  .client-note-inline { font-weight: 700; color: #92400e; font-size: 11px; }
   .print-footer {
     display: none;
     position: fixed;
@@ -701,7 +726,7 @@ function buildOrdersReportHtmlD9(rows) {
     const isLong = group.rows.length > 24;
     return `
     <section class="client ${isLong ? "client-long" : ""}">
-      <div class="client-title">Cliente: ${escapeReportHtmlD9(group.cliente)}</div>
+      <div class="client-title">Cliente: ${escapeReportHtmlD9(group.cliente)}${getOrderNotePedidoD9(group) ? ` <span class="client-note-inline">|| Nota: ${escapeReportHtmlD9(getOrderNotePedidoD9(group))}</span>` : ""}</div>
       <table>
         <thead><tr><th class="code">COD PROD</th><th class="qty">CANT.</th><th class="desc">DESCRIPCIÓN</th></tr></thead>
         <tbody>
@@ -709,7 +734,7 @@ function buildOrdersReportHtmlD9(rows) {
             <tr>
               <td class="code">${escapeReportHtmlD9(String(r.id_producto || "-").trim() || "-")}</td>
               <td class="qty">${escapeReportHtmlD9(Number(r.cantidad || 0))}</td>
-              <td class="desc">${escapeReportHtmlD9(r.item || "")}</td>
+              <td class="desc">${escapeReportHtmlD9(r.item || "")}${getOrderNoteItemD9(r) ? ` <span class="item-note-inline">|| ${escapeReportHtmlD9(getOrderNoteItemD9(r))}</span>` : ""}</td>
             </tr>
           `).join("")}
         </tbody>
