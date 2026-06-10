@@ -1,7 +1,7 @@
 const PEDIDOS_APP_URL_D9ADMIN = "https://pd9-cloud.pages.dev";
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.2.4 (notas reporte fix)";
+const APP_VERSION = "v2.2.5 (separador reporte)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -707,7 +707,8 @@ function buildOrdersReportHtmlD9(rows) {
   h1 { margin: 0 0 2px; font-size: 18px; line-height: 1.1; letter-spacing: .01em; }
   .meta { font-size: 9.5px; color: #4b5563; margin-bottom: 4px; }
   .summary { font-size: 11px; font-weight: 700; margin: 0 0 6px; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 5px; background: #f9fafb; }
-  .client { margin: 0 0 5px; padding-bottom: 4px; border-bottom: 1.4px solid #111827; break-inside: avoid; page-break-inside: avoid; }
+  .client { margin: 0 0 6px; padding-bottom: 4px; border-bottom: 7px solid #9ca3af; break-inside: avoid; page-break-inside: avoid; }
+  .client:first-of-type { border-top: 0; }
   .client.client-long { break-inside: auto; page-break-inside: auto; break-before: page; page-break-before: always; break-after: page; page-break-after: always; }
   .client.client-long:first-of-type { break-before: auto; page-break-before: auto; }
   .client-title { font-size: 13px; font-weight: 800; margin-bottom: 2px; }
