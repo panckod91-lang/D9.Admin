@@ -1,7 +1,7 @@
 const PEDIDOS_APP_URL_D9ADMIN = "https://pd9-cloud.pages.dev";
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.2.3 (notas reporte)";
+const APP_VERSION = "v2.2.4 (notas reporte fix)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -368,6 +368,8 @@ function normalizeOrderRow(o) {
     total_item: parsePrice(o.total_item ?? o.totalitem ?? 0) || 0,
     total_pedido: parsePrice(o.total_pedido ?? o.totalpedido ?? 0) || 0,
     estado: String(o.estado || o.status || o.situacion || "").trim(),
+    nota_item: String(o.nota_item || o.nota || o.observacion_item || o.observacion_producto || "").trim(),
+    nota_pedido: String(o.nota_pedido || o.observacion_pedido || o.observaciones || o.nota_general || "").trim(),
     _raw: o
   };
 }
@@ -489,7 +491,7 @@ function renderOrdersVisualD9(rows, terms = []) {
               <summary class="order-summary-admin-d9">
                 <div class="order-summary-main-d9">
                   <strong>${escapeHtml(first.cliente || "Sin cliente")} ${anulado ? `<span class="order-status-badge-d9">ANULADO</span>` : ""}</strong>
-                  <small>${escapeHtml(first.fecha || "")} · ${escapeHtml(first.vendedor || "Sin vendedor")}</small>
+                  <small>${escapeHtml(first.fecha || "")} · ${escapeHtml(first.vendedor || "Sin vendedor")}${getOrderNotePedidoD9({ rows: group.rows }) ? " · Nota pedido" : ""}</small>
                   ${matchHint ? `<span class="order-match-hint-d9">${escapeHtml(matchHint)}</span>` : ""}
                 </div>
                 <div class="order-summary-side-d9">
@@ -504,14 +506,17 @@ function renderOrdersVisualD9(rows, terms = []) {
                   ${lines} línea${lines === 1 ? "" : "s"} · ${cantidadItems} unidad${cantidadItems === 1 ? "" : "es"}
                 </div>
 
-                ${group.rows.map(r => `
+                ${group.rows.map(r => {
+                  const itemNote = getOrderNoteItemD9(r);
+                  const itemTxt = `${r.item || ""}${itemNote ? " || " + itemNote : ""}`;
+                  return `
                   <div class="order-detail-line-d9">
-                    <span>${escapeHtml(r.item || "")}</span>
+                    <span title="${escapeHtml(itemTxt)}">${escapeHtml(itemTxt)}</span>
                     <em>${Number(r.cantidad || 0)}</em>
                     <small>${money(r.precio || 0)}</small>
                     <strong>${money(r.total_item || 0)}</strong>
                   </div>
-                `).join("")}
+                `}).join("")}
               </div>
             </details>
           `;
@@ -605,13 +610,29 @@ function getGroupedOrdersForReportD9(rows) {
 
 
 function getOrderNoteItemD9(row) {
-  return String(row?.nota_item || row?.nota || row?.observacion_item || "").trim();
+  const raw = row?._raw || {};
+  return String(
+    row?.nota_item ||
+    raw.nota_item ||
+    row?.nota || raw.nota ||
+    row?.observacion_item || raw.observacion_item ||
+    raw.observacion_producto ||
+    ""
+  ).trim();
 }
 
 function getOrderNotePedidoD9(group) {
   const rows = Array.isArray(group?.rows) ? group.rows : [];
   for (const row of rows) {
-    const note = String(row?.nota_pedido || row?.observacion_pedido || row?.observaciones || "").trim();
+    const raw = row?._raw || {};
+    const note = String(
+      row?.nota_pedido ||
+      raw.nota_pedido ||
+      row?.observacion_pedido || raw.observacion_pedido ||
+      row?.observaciones || raw.observaciones ||
+      raw.nota_general ||
+      ""
+    ).trim();
     if (note) return note;
   }
   return "";
