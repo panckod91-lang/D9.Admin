@@ -1,4 +1,4 @@
-const CACHE_NAME = "d9-admin-v225-separador-reporte";
+const CACHE_NAME = "d9-admin-v226-separador-superior-reporte";
 
 self.addEventListener("install", event => {
   self.skipWaiting();
