@@ -1,7 +1,7 @@
 const PEDIDOS_APP_URL_D9ADMIN = "https://pd9-cloud.pages.dev";
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.2.6 (separador superior reporte)";
+const APP_VERSION = "v2.2.7 (estadisticas sin anulados)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -1602,7 +1602,7 @@ function getOrderGroupsD9(rows) {
   return Array.from(map.entries()).map(([id, lines]) => ({ id, lines, first: lines[0] || {} }));
 }
 
-function filterStatsRowsD9(rows, range) {
+function filterStatsRowsByDateD9(rows, range) {
   if (!range || range === "all") return rows;
   const today = new Date();
   const todayKey = today.toISOString().slice(0, 10);
@@ -1628,6 +1628,10 @@ function filterStatsRowsD9(rows, range) {
 
     return dt >= min;
   });
+}
+
+function filterStatsRowsD9(rows, range) {
+  return filterStatsRowsByDateD9(rows, range).filter(r => !isOrderAnuladoD9(r));
 }
 
 function addRankD9(map, key, amount, qty = 0) {
@@ -1785,11 +1789,15 @@ async function renderStatsView(force = false) {
 
   try {
     const rowsAll = await ensureStatsOrdersD9(force);
-    const rows = filterStatsRowsD9(rowsAll, range);
+    const rowsInRange = filterStatsRowsByDateD9(rowsAll, range);
+    const rows = rowsInRange.filter(r => !isOrderAnuladoD9(r));
+    const excludedRows = rowsInRange.filter(r => isOrderAnuladoD9(r));
+    const excludedGroups = getOrderGroupsD9(excludedRows).length;
     const stats = buildStatsD9(rows);
 
     if (summary) {
-      summary.textContent = `${stats.groups.length} pedido${stats.groups.length === 1 ? "" : "s"} · ${rows.length} línea${rows.length === 1 ? "" : "s"} · ${money(stats.total)}`;
+      const excl = excludedGroups ? ` · anulados excluidos: ${excludedGroups}` : "";
+      summary.textContent = `${stats.groups.length} pedido${stats.groups.length === 1 ? "" : "s"} · ${rows.length} línea${rows.length === 1 ? "" : "s"} · ${money(stats.total)}${excl}`;
     }
 
     if (content) content.innerHTML = renderStatsDashboardD9(stats);
