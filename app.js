@@ -1,7 +1,7 @@
 const PEDIDOS_APP_URL_D9ADMIN = "https://pd9-cloud.pages.dev";
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.2.7 (estadisticas sin anulados)";
+const APP_VERSION = "v2.2.8 (reemplazo lista completa)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -264,16 +264,66 @@ function parseXlsRows(rows) {
   return rows.slice(1).map(r => {
     const precioBase = parsePrice(r[iLista1]);
     const precio = XLS_PRICE_INCLUDES_IVA_D9 ? precioBase : Math.round((precioBase * (1 + IVA_RATE_D9)) * 100) / 100;
+    const lista1 = Number.isFinite(precio) && precio > 0 ? precio : 0;
     return {
       id: String(r[iCodigo] ?? "").trim(),
       nombre: String(r[iDesc] ?? "").trim(),
       categoria: String(r[iRubro] ?? "").trim(),
-      lista_1: precio,
+      lista_1: lista1,
       lista_2: "",
       lista_3: "",
-      activo: "si"
+      activo: lista1 > 0 ? "si" : "no"
     };
-  }).filter(p => p.id && p.nombre && Number(p.lista_1) > 0);
+  }).filter(p => p.id && p.nombre);
+}
+
+function getProductIdD9(p) {
+  return String(p?.id ?? p?.codigo ?? p?.id_producto ?? "").trim();
+}
+
+function buildReplacementProductsD9(imported) {
+  const byId = new Map();
+
+  (imported || []).forEach(p => {
+    const id = getProductIdD9(p);
+    if (!id) return;
+    const lista1 = parsePrice(p.lista_1);
+    byId.set(id, {
+      id,
+      nombre: String(p.nombre || p.item || p.producto || "").trim(),
+      categoria: String(p.categoria || p.rubro || "").trim(),
+      lista_1: lista1 > 0 ? lista1 : 0,
+      lista_2: "",
+      lista_3: "",
+      activo: lista1 > 0 ? "si" : "no"
+    });
+  });
+
+  const ocultadosAusentes = [];
+  (state.productos || []).forEach(p => {
+    const id = getProductIdD9(p);
+    if (!id || byId.has(id)) return;
+    const nombre = String(p.nombre || p.item || p.producto || "").trim();
+    if (!nombre) return;
+    byId.set(id, {
+      id,
+      nombre,
+      categoria: String(p.categoria || p.rubro || "").trim(),
+      lista_1: 0,
+      lista_2: "",
+      lista_3: "",
+      activo: "no"
+    });
+    ocultadosAusentes.push(id);
+  });
+
+  const productos = Array.from(byId.values()).filter(p => p.id && p.nombre);
+  return {
+    productos,
+    activos: productos.filter(p => Number(p.lista_1) > 0).length,
+    ocultos: productos.filter(p => Number(p.lista_1) <= 0).length,
+    ocultadosAusentes: ocultadosAusentes.length
+  };
 }
 
 async function parseXlsFile() {
@@ -285,7 +335,9 @@ async function parseXlsFile() {
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
     state.importedProducts = parseXlsRows(rows);
-    $("#xlsSummary").textContent = `Archivo: ${file.name} · productos válidos: ${state.importedProducts.length} · IVA 21% aplicado`;
+    const activos = state.importedProducts.filter(p => Number(p.lista_1) > 0).length;
+    const ocultos = state.importedProducts.length - activos;
+    $("#xlsSummary").textContent = `Archivo: ${file.name} · filas válidas: ${state.importedProducts.length} · activos: ${activos} · ocultos por precio 0/vacío: ${ocultos} · IVA 21% aplicado`;
     $("#btnSaveProducts").disabled = !state.importedProducts.length;
     renderProductsPreview();
   } catch (err) {
@@ -296,20 +348,23 @@ async function parseXlsFile() {
 
 function renderProductsPreview() {
   const sample = state.importedProducts.slice(0, 80);
-  $("#productsPreview").innerHTML = tableHtml(sample, ["id", "nombre", "categoria", "lista_1", "lista_2", "lista_3", "activo"], "Vista previa con IVA 21% incluido: primeras 80 filas");
+  $("#productsPreview").innerHTML = tableHtml(sample, ["id", "nombre", "categoria", "lista_1", "lista_2", "lista_3", "activo"], "Vista previa XLS: precio 0/vacío queda oculto · primeras 80 filas");
 }
 
 async function saveImportedProducts() {
   if (!state.importedProducts.length) return toast("No hay productos importados", "error");
-  if (!$("#confirmReplaceProducts").checked) return toast("Marcá la confirmación para actualizar productos", "error");
+  if (!$("#confirmReplaceProducts").checked) return toast("Marcá la confirmación para reemplazar la lista", "error");
+
+  const replacement = buildReplacementProductsD9(state.importedProducts);
+  if (!replacement.productos.length) return toast("No quedaron productos para guardar", "error");
 
   $("#btnSaveProducts").disabled = true;
-  toast("Guardando productos con IVA 21% incluido…");
+  toast("Reemplazando lista de productos…");
 
   try {
-    const result = await apiPost({ action: "update_productos", productos: state.importedProducts });
-    toast(`Productos OK · actualizados: ${result.actualizados || 0} · agregados: ${result.agregados || 0}`);
-    $("#xlsSummary").textContent = `Guardado OK · recibidos ${result.recibidos || state.importedProducts.length} · válidos ${result.validos || state.importedProducts.length} · actualizados ${result.actualizados || 0} · agregados ${result.agregados || 0} · total hoja ${result.total_hoja || "?"}`;
+    const result = await apiPost({ action: "update_productos", productos: replacement.productos });
+    toast(`Lista reemplazada · activos: ${replacement.activos} · ocultos: ${replacement.ocultos}`);
+    $("#xlsSummary").textContent = `Guardado OK · activos ${replacement.activos} · ocultos ${replacement.ocultos} · ocultos por ausentes ${replacement.ocultadosAusentes} · recibidos ${result.recibidos || replacement.productos.length} · actualizados ${result.actualizados || 0} · agregados ${result.agregados || 0} · total hoja ${result.total_hoja || "?"}`;
     await loadBootstrap();
   } catch (err) {
     console.error(err);

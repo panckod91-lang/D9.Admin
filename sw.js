@@ -1,4 +1,4 @@
-const CACHE_NAME = "d9-admin-v227-estadisticas-sin-anulados";
+const CACHE_NAME = "d9-admin-v228-reemplazo-lista";
 
 self.addEventListener("install", event => {
   self.skipWaiting();

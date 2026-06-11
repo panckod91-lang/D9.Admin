@@ -72,8 +72,8 @@
         <div class="admin-card">
           <label class="admin-label">Archivo .xls / .xlsx</label>
           <input id="xlsInput" class="admin-input" type="file" accept=".xls,.xlsx" />
-          <div class="admin-actions"><button id="btnParseXls" class="admin-btn primary" type="button">Previsualizar lista</button><button id="btnSaveProducts" class="admin-btn danger" type="button" disabled>Guardar en productos</button></div>
-          <label class="admin-check"><input id="confirmReplaceProducts" type="checkbox" /> Actualizar coincidencias por ID y agregar productos nuevos. No borra los que no estén en el XLS.</label>
+          <div class="admin-actions"><button id="btnParseXls" class="admin-btn primary" type="button">Previsualizar lista</button><button id="btnSaveProducts" class="admin-btn danger" type="button" disabled>Reemplazar lista</button></div>
+          <label class="admin-check"><input id="confirmReplaceProducts" type="checkbox" /> Reemplazar lista completa: productos ausentes, con precio 0 o precio vacío quedan ocultos.</label>
           <p id="xlsSummary" class="admin-note">Esperando archivo…</p>
         </div>
         <div id="productsPreview" class="admin-table-wrap"></div>
