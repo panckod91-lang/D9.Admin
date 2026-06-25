@@ -1,7 +1,7 @@
 const PEDIDOS_APP_URL_D9ADMIN = "https://pd9-cloud.pages.dev";
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.2.9 (XLS con marca)";
+const APP_VERSION = "v2.2.10 (PDF salto clientes largo)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -804,7 +804,7 @@ function buildOrdersReportHtmlD9(rows) {
   .summary { font-size: 11px; font-weight: 700; margin: 0 0 6px; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 5px; background: #f9fafb; }
   .client { margin: 0 0 6px; padding: 6px 0 4px; border-top: 7px solid #9ca3af; border-bottom: 0; break-inside: avoid; page-break-inside: avoid; }
   .client:first-of-type { border-top: 7px solid #9ca3af; }
-  .client.client-long { break-inside: auto; page-break-inside: auto; break-before: page; page-break-before: always; break-after: page; page-break-after: always; }
+  .client.client-long { break-inside: auto; page-break-inside: auto; break-before: page; page-break-before: always; }
   .client.client-long:first-of-type { break-before: auto; page-break-before: auto; }
   .client-title { font-size: 13px; font-weight: 800; margin-bottom: 2px; }
   .client-summary { margin-top: 2px; padding: 2px 4px 0; font-size: 10.5px; font-weight: 800; color: #111827; }
