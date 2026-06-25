@@ -1,7 +1,7 @@
 const PEDIDOS_APP_URL_D9ADMIN = "https://pd9-cloud.pages.dev";
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.2.8 (reemplazo lista completa)";
+const APP_VERSION = "v2.2.9 (XLS con marca)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -253,15 +253,49 @@ function normalizeHeader(h) {
 
 function parseXlsRows(rows) {
   if (!rows.length) return [];
-  const headers = rows[0].map(normalizeHeader);
+
+  const headerRowIndex = rows.findIndex(row => {
+    const hs = (row || []).map(normalizeHeader);
+    return hs.includes("codigo") && hs.includes("rubro") && (hs.includes("descripcion") || hs.includes("descripci")) && hs.includes("lista1");
+  });
+
+  if (headerRowIndex < 0) {
+    throw new Error("No encontré encabezados Codigo, Rubro, Descripcion y Lista1");
+  }
+
+  const rawHeaders = rows[headerRowIndex].map(h => String(h || "").trim());
+  const headers = rawHeaders.map(normalizeHeader);
   const idx = (names) => names.map(normalizeHeader).map(n => headers.indexOf(n)).find(i => i >= 0);
+  const label = (i) => i === undefined ? "—" : (rawHeaders[i] || `col ${i + 1}`);
+
   const iCodigo = idx(["Codigo", "Código"]);
   const iRubro = idx(["Rubro"]);
   const iDesc = idx(["Descripcion", "Descripción"]);
+  const iMarca = idx(["Marca"]);
   const iLista1 = idx(["Lista1", "Lista 1"]);
-  if ([iCodigo, iRubro, iDesc, iLista1].some(i => i === undefined)) throw new Error("No encontré columnas Codigo, Rubro, Descripcion y Lista1");
+  const iPrecioCompra = idx(["Precio Compra", "PrecioCompra", "Compra"]);
+  const iStock = idx(["Stock"]);
+  const iStockMin = idx(["Stock mínimo", "Stock minimo", "StockMinimo"]);
+  const iIva = idx(["AlícuotaIva", "AlicuotaIva", "Alicuota IVA", "Alícuota IVA"]);
+  const iCodigoProv = idx(["CodigoProv", "CódigoProv", "Codigo Proveedor", "Código Proveedor"]);
 
-  return rows.slice(1).map(r => {
+  if ([iCodigo, iRubro, iDesc, iLista1].some(i => i === undefined)) {
+    throw new Error("No encontré columnas obligatorias: Codigo, Rubro, Descripcion y Lista1");
+  }
+
+  state.xlsColumnMap = {
+    fila_encabezado: headerRowIndex + 1,
+    codigo: label(iCodigo),
+    rubro: label(iRubro),
+    descripcion: label(iDesc),
+    marca: label(iMarca),
+    precio_venta: label(iLista1),
+    ignoradas: [iPrecioCompra, iStock, iStockMin, iIva, iCodigoProv]
+      .filter(i => i !== undefined)
+      .map(label)
+  };
+
+  return rows.slice(headerRowIndex + 1).map(r => {
     const precioBase = parsePrice(r[iLista1]);
     const precio = XLS_PRICE_INCLUDES_IVA_D9 ? precioBase : Math.round((precioBase * (1 + IVA_RATE_D9)) * 100) / 100;
     const lista1 = Number.isFinite(precio) && precio > 0 ? precio : 0;
@@ -269,6 +303,7 @@ function parseXlsRows(rows) {
       id: String(r[iCodigo] ?? "").trim(),
       nombre: String(r[iDesc] ?? "").trim(),
       categoria: String(r[iRubro] ?? "").trim(),
+      marca: String(iMarca === undefined ? "" : (r[iMarca] ?? "")).trim(),
       lista_1: lista1,
       lista_2: "",
       lista_3: "",
@@ -292,6 +327,7 @@ function buildReplacementProductsD9(imported) {
       id,
       nombre: String(p.nombre || p.item || p.producto || "").trim(),
       categoria: String(p.categoria || p.rubro || "").trim(),
+      marca: String(p.marca || "").trim(),
       lista_1: lista1 > 0 ? lista1 : 0,
       lista_2: "",
       lista_3: "",
@@ -309,6 +345,7 @@ function buildReplacementProductsD9(imported) {
       id,
       nombre,
       categoria: String(p.categoria || p.rubro || "").trim(),
+      marca: String(p.marca || "").trim(),
       lista_1: 0,
       lista_2: "",
       lista_3: "",
@@ -337,7 +374,10 @@ async function parseXlsFile() {
     state.importedProducts = parseXlsRows(rows);
     const activos = state.importedProducts.filter(p => Number(p.lista_1) > 0).length;
     const ocultos = state.importedProducts.length - activos;
-    $("#xlsSummary").textContent = `Archivo: ${file.name} · filas válidas: ${state.importedProducts.length} · activos: ${activos} · ocultos por precio 0/vacío: ${ocultos} · IVA 21% aplicado`;
+    const conMarca = state.importedProducts.filter(p => String(p.marca || "").trim()).length;
+    const map = state.xlsColumnMap || {};
+    const ignoradas = Array.isArray(map.ignoradas) && map.ignoradas.length ? ` · ignoradas: ${map.ignoradas.join(", ")}` : "";
+    $("#xlsSummary").textContent = `Archivo: ${file.name} · filas válidas: ${state.importedProducts.length} · activos: ${activos} · ocultos por precio 0/vacío: ${ocultos} · con marca: ${conMarca} · columnas: Código=${map.codigo || "?"}, Rubro=${map.rubro || "?"}, Descripción=${map.descripcion || "?"}, Marca=${map.marca || "—"}, Precio venta=${map.precio_venta || "?"}${ignoradas} · IVA 21% aplicado`;
     $("#btnSaveProducts").disabled = !state.importedProducts.length;
     renderProductsPreview();
   } catch (err) {
@@ -348,7 +388,7 @@ async function parseXlsFile() {
 
 function renderProductsPreview() {
   const sample = state.importedProducts.slice(0, 80);
-  $("#productsPreview").innerHTML = tableHtml(sample, ["id", "nombre", "categoria", "lista_1", "lista_2", "lista_3", "activo"], "Vista previa XLS: precio 0/vacío queda oculto · primeras 80 filas");
+  $("#productsPreview").innerHTML = tableHtml(sample, ["id", "nombre", "categoria", "marca", "lista_1", "lista_2", "lista_3", "activo"], "Vista previa XLS: precio 0/vacío queda oculto · primeras 80 filas");
 }
 
 async function saveImportedProducts() {

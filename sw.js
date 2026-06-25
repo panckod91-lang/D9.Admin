@@ -1,4 +1,4 @@
-const CACHE_NAME = "d9-admin-v228-reemplazo-lista";
+const CACHE_NAME = "d9-admin-v229-xls-marca";
 
 self.addEventListener("install", event => {
   self.skipWaiting();

@@ -68,12 +68,12 @@
       </section>
 
       <section id="view-productos" class="view admin-view">
-        <div class="admin-page-head"><button class="admin-home-btn" data-view="home" type="button">🏠</button><div><h2>Productos</h2><p>Importar XLS 97, normalizar columnas y previsualizar antes de guardar.</p></div></div>
+        <div class="admin-page-head"><button class="admin-home-btn" data-view="home" type="button">🏠</button><div><h2>Productos</h2><p>Importar XLS, detectar columnas Codigo/Rubro/Descripcion/Marca/Lista1 y previsualizar antes de guardar.</p></div></div>
         <div class="admin-card">
           <label class="admin-label">Archivo .xls / .xlsx</label>
           <input id="xlsInput" class="admin-input" type="file" accept=".xls,.xlsx" />
           <div class="admin-actions"><button id="btnParseXls" class="admin-btn primary" type="button">Previsualizar lista</button><button id="btnSaveProducts" class="admin-btn danger" type="button" disabled>Reemplazar lista</button></div>
-          <label class="admin-check"><input id="confirmReplaceProducts" type="checkbox" /> Reemplazar lista completa: productos ausentes, con precio 0 o precio vacío quedan ocultos.</label>
+          <label class="admin-check"><input id="confirmReplaceProducts" type="checkbox" /> Reemplazar lista completa: productos ausentes, con precio 0 o precio vacío quedan ocultos. Precio venta: Lista1. Marca: Marca.</label>
           <p id="xlsSummary" class="admin-note">Esperando archivo…</p>
         </div>
         <div id="productsPreview" class="admin-table-wrap"></div>
