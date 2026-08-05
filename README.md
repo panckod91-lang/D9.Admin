@@ -26,3 +26,14 @@ PWA liviana para toma de pedidos comerciales con funcionamiento online/offline, 
 - Eliminada lectura vieja vía OpenSheet.
 - La app queda leyendo datos desde Apps Script mediante `BOOTSTRAP_URL`.
 - Service Worker conserva estrategia network-first para archivos propios y no intercepta requests externos.
+
+
+## v2.2.10
+- PDF reporte: los bloques largos ya no fuerzan salto después, permitiendo aprovechar espacio con el cliente siguiente si entra.
+
+
+## v2.2.11
+- Pedidos: filtro de vendedor más rígido.
+- Agrega selector de vendedor exacto.
+- La búsqueda libre ya no usa vendedor como campo mezclado con cliente/producto.
+- Si se escribe exactamente el nombre/id de un vendedor, también filtra por vendedor exacto.

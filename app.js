@@ -1,7 +1,7 @@
 const PEDIDOS_APP_URL_D9ADMIN = "https://pd9-cloud.pages.dev";
 const API_BASE = "https://script.google.com/macros/s/AKfycbwg8YQ7lqtLFbxnmtHnM3TxHaCaVoHQ_7AJHKPhiQRyrX6OyqO004F2pSABjI5df3yI/exec";
 const BOOTSTRAP_URL = `${API_BASE}?action=bootstrap`;
-const APP_VERSION = "v2.2.10 (PDF salto clientes largo)";
+const APP_VERSION = "v2.2.11 (filtro vendedor exacto)";
 const IVA_RATE_D9 = 0.21;
 const XLS_PRICE_INCLUDES_IVA_D9 = false;
 
@@ -438,6 +438,7 @@ async function loadOrders() {
     }
 
     state.pedidos = rawPedidos.map(normalizeOrderRow);
+    renderOrderSellerOptionsD9();
     renderOrders();
     toast(`Pedidos cargados: ${state.pedidos.length}`);
   } catch (err) {
@@ -501,11 +502,73 @@ function isOrderAnuladoD9(order) {
   return normalizeSearch(order?.estado || "").includes("anulado");
 }
 
+function getOrderSellerKeyD9(order) {
+  return normalizeSearch([
+    order?.vendedor_id,
+    order?.vendedor
+  ].join(" "));
+}
+
+function getKnownOrderSellersD9() {
+  const map = new Map();
+
+  (state.usuarios || []).forEach(u => {
+    const id = String(u.id || "").trim();
+    const nombre = String(u.nombre || u.usuario || "").trim();
+    if (!id && !nombre) return;
+    const key = normalizeSearch([id, nombre].join(" "));
+    if (key && !map.has(key)) map.set(key, { key, label: nombre || id, id, nombre });
+  });
+
+  (state.pedidos || []).forEach(o => {
+    const id = String(o.vendedor_id || "").trim();
+    const nombre = String(o.vendedor || "").trim();
+    if (!id && !nombre) return;
+    const key = normalizeSearch([id, nombre].join(" "));
+    if (key && !map.has(key)) map.set(key, { key, label: nombre || id, id, nombre });
+  });
+
+  return Array.from(map.values()).sort((a, b) => String(a.label).localeCompare(String(b.label), "es"));
+}
+
+function renderOrderSellerOptionsD9() {
+  const select = $("#orderFilterSeller");
+  if (!select) return;
+
+  const current = select.value || "";
+  const sellers = getKnownOrderSellersD9();
+  select.innerHTML = `<option value="">Todos los vendedores</option>` + sellers.map(s => {
+    const safeKey = escapeHtml(s.key);
+    const safeLabel = escapeHtml(s.label);
+    return `<option value="${safeKey}">${safeLabel}</option>`;
+  }).join("");
+
+  if (current && sellers.some(s => s.key === current)) select.value = current;
+}
+
 function parseOrderFilterTermsD9(raw) {
   const allTerms = normalizeSearch(raw).split(/\s+/).filter(Boolean);
   const wantsAnulados = allTerms.some(t => t.includes("anulado"));
   const terms = allTerms.filter(t => !t.includes("anulado"));
-  return { terms, wantsAnulados };
+
+  const rawWithoutAnulados = terms.join(" ").trim();
+  let sellerTextKey = "";
+
+  if (rawWithoutAnulados) {
+    const sellers = getKnownOrderSellersD9();
+    const exactSeller = sellers.find(s => {
+      const id = normalizeSearch(s.id || "");
+      const nombre = normalizeSearch(s.nombre || s.label || "");
+      return rawWithoutAnulados === id || rawWithoutAnulados === nombre || rawWithoutAnulados === s.key;
+    });
+
+    if (exactSeller) {
+      sellerTextKey = exactSeller.key;
+      return { terms: [], wantsAnulados, sellerTextKey };
+    }
+  }
+
+  return { terms, wantsAnulados, sellerTextKey };
 }
 
 function getOrderMatchHintD9(rows, terms) {
@@ -624,9 +687,11 @@ function renderOrdersVisualD9(rows, terms = []) {
 
 function getFilteredOrdersD9() {
   const qRaw = $("#orderFilterText")?.value || "";
-  const { terms, wantsAnulados } = parseOrderFilterTermsD9(qRaw);
+  const { terms, wantsAnulados, sellerTextKey } = parseOrderFilterTermsD9(qRaw);
   const from = $("#orderFilterFrom")?.value || "";
   const to = $("#orderFilterTo")?.value || "";
+  const sellerSelectKey = normalizeSearch($("#orderFilterSeller")?.value || "");
+  const sellerKey = sellerSelectKey || sellerTextKey || "";
 
   return (state.pedidos || []).filter(o => {
     const anulado = isOrderAnuladoD9(o);
@@ -639,11 +704,11 @@ function getFilteredOrdersD9() {
       return false;
     }
 
+    if (sellerKey && getOrderSellerKeyD9(o) !== sellerKey) return false;
+
     const txt = normalizeSearch([
       o.fecha,
       o.pedido_id,
-      o.vendedor_id,
-      o.vendedor,
       o.cliente,
       o.item,
       o.id_producto,
@@ -2127,6 +2192,8 @@ function bindEvents() {
   $("#orderFilterText").oninput = renderOrders;
   $("#orderFilterFrom").onchange = renderOrders;
   $("#orderFilterTo").onchange = renderOrders;
+  const orderFilterSeller = $("#orderFilterSeller");
+  if (orderFilterSeller) orderFilterSeller.onchange = renderOrders;
   const salesFilterText = $("#salesFilterText");
   if (salesFilterText) salesFilterText.oninput = renderVentasView;
   const salesFilterFrom = $("#salesFilterFrom");

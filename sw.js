@@ -1,4 +1,4 @@
-const CACHE_NAME = "d9-admin-v229-xls-marca";
+const CACHE_NAME = "d9-admin-v2211-filtro-vendedor";
 
 self.addEventListener("install", event => {
   self.skipWaiting();

@@ -1,0 +1,11 @@
+D9 Admin v2.2.11 (filtro vendedor exacto)
+
+Cambios:
+- En Pedidos se agrega selector "Todos los vendedores" / vendedor.
+- Filtrar por vendedor ahora es exacto por id/nombre de vendedor.
+- La búsqueda libre deja de mezclar vendedor con cliente/producto/código.
+- Si se escribe exactamente el nombre o id de un vendedor (por ejemplo "Ale"), se interpreta como filtro de vendedor exacto.
+- Mantiene anulados: escribir "anulado" o "anulados" sigue mostrando anulados.
+
+Objetivo:
+- Evitar que al buscar vendedor Ale aparezcan clientes o productos que contengan "ale" como Valeria, Paladini, etc.

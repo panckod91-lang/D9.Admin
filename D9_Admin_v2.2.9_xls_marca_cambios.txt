@@ -1,0 +1,21 @@
+D9 Admin v2.2.9 (XLS con marca)
+
+Base: D9.Admin vigente v2.2.8.
+
+Cambios:
+- Importador XLS detecta columnas por nombre, no por posición.
+- Mapeo del XLS nuevo:
+  Codigo -> id
+  Rubro -> categoria
+  Descripcion -> nombre
+  Marca -> marca
+  Lista1 -> lista_1
+- Ignora explícitamente columnas que no deben usarse:
+  Precio Compra, Stock, StockMinimo, AlicuotaIva, CodigoProv.
+- Precio de venta siempre sale de Lista1. Nunca toma Precio Compra.
+- Preview muestra columna marca.
+- Resumen de importación muestra columnas detectadas e ignoradas.
+- Sigue compatible con XLS sin Marca: marca queda vacía.
+- Mantiene lógica de reemplazo completo: ausentes/0/vacío quedan ocultos.
+
+No se tocaron reportes, estadísticas, pedidos, anulaciones ni ventas mostrador.

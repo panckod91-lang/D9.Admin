@@ -82,9 +82,10 @@
       <section id="view-pedidos" class="view admin-view">
         <div class="admin-page-head"><button class="admin-home-btn" data-view="home" type="button">🏠</button><div><h2>Pedidos</h2><p>Consulta de hoja pedidos con filtros básicos.</p></div></div>
         <div class="admin-card admin-filter-grid">
-          <input id="orderFilterText" class="admin-input" placeholder="Buscar cliente, vendedor, producto o anulados" />
+          <input id="orderFilterText" class="admin-input" placeholder="Buscar cliente, producto, código o anulados" />
           <input id="orderFilterFrom" class="admin-input" type="date" />
           <input id="orderFilterTo" class="admin-input" type="date" />
+          <select id="orderFilterSeller" class="admin-input"><option value="">Todos los vendedores</option></select>
           <button id="btnLoadOrders" class="admin-btn primary" type="button">Cargar pedidos</button>
           <div class="orders-report-actions-d9">
             <button id="btnOrdersReportPdf" class="admin-btn report-main-d9" type="button">📄 Generar PDF A4</button>

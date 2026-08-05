@@ -1,0 +1,22 @@
+D9 Admin v2.2.10 (PDF salto clientes largos)
+
+Base: v2.2.9 XLS con marca.
+
+Cambio:
+- Reporte PDF de pedidos: se corrige paginación de clientes largos.
+- Los clientes largos siguen arrancando en página nueva si corresponde.
+- Ya no fuerzan salto de página DESPUÉS del bloque.
+- Esto permite que el siguiente cliente, si entra en el espacio restante, suba debajo del cliente largo.
+
+Caso que corrige:
+- Capdevila podía ocupar una página casi completa y forzaba salto posterior.
+- Meli quedaba sola en la página siguiente aunque entraba debajo de Capdevila.
+- Ahora Meli puede quedar debajo de Capdevila.
+- Milagros, al ser bloque enorme, sigue arrancando sola en página nueva.
+
+No se tocó:
+- XLS/marca
+- pedidos
+- historial
+- WhatsApp
+- backend
